@@ -1,0 +1,22 @@
+{
+  "name": "onto.js",
+  "version": "0.0.0",
+  "description": "A highly modular node.js-based RPG engine.",
+  "main": "index.js",
+  "scripts": {
+    "test": "..."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/storjarn/onto.js.git"
+  },
+  "keywords": [
+    "node.js",
+    "rpg"
+  ],
+  "author": "Christopher Maples",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/storjarn/onto.js/issues"
+  }
+}
