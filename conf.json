@@ -1,0 +1,46 @@
+{
+    "tags": {
+        "allowUnknownTags": true
+    },
+    "source": {
+        "include": [ "./README.md", "./lib/" ],
+        "exclude": [
+            "*.min.js",
+            "dist/",
+            "./lib/intro.js",
+            "./lib/outro.js"
+        ],
+        "includePattern": ".+\\.js(doc)?$",
+        "excludePattern": "(^|\\/|\\\\)_"
+    },
+    "plugins": [
+        "./node_modules/jsdoc/plugins/markdown",
+        "./node_modules/jsdoc/plugins/partial",
+        "./node_modules/jsdoc-plugins/plugins/prettyPrintCode",
+        "./node_modules/jsdoc-plugins/plugins/inheritDoc"
+    ],
+    "markdown": {
+        "parser": "gfm",
+        "hardwrap": true,
+        "opt1": "value",
+        "opt2": [ "foo", "bar", "baz" ]
+    },
+    "templates": {
+        "cleverLinks": true,
+        "monospaceLinks": true,
+        "default" : {
+            "outputSourceFiles": true,
+            "outputSourcePath": true
+        }
+    },
+    "opts": {
+        "template": "./node_modules/jsdoc-bootstrap-template",
+        "encoding": "utf8",
+        "destination": "./docs/",
+        "recurse": true,
+        "tutorials": "",
+        "query": "",
+        "private": true,
+        "lenient": true
+    }
+}

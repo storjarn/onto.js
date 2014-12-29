@@ -1,4 +1,4 @@
 onto.js
 =======
 
-A highly modular node.js-based RPG engine.
+A highly modular js-based RPG engine that supports node.js and modern browsers.

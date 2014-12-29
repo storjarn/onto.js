@@ -1,0 +1,18 @@
+{
+  "name": "onto.js",
+  "version": "1.1.0",
+  "main": "onto.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "ee-class": "storjarn/ee-class",
+    "requirejs": "~2.1.15",
+    "jasmine": "~2.1.3",
+    "underscore": "~1.7.0"
+  }
+}

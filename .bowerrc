@@ -1,0 +1,6 @@
+{
+  "directory": "bower",
+  "scripts": {
+    "postinstall": "grunt requireBower"
+  }
+}
