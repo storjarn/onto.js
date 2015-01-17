@@ -8,6 +8,7 @@
             [
                 '../dist/Class.min', '../dist/Namespace.min',
                 '../dist/EventEmitter.min', '../dist/ReferenceObject.min',
+                '../dist/Collection.min',
                 'underscore'
             ],
             factory
@@ -18,6 +19,7 @@
             require('../dist/Namespace.min'),
             require('../dist/EventEmitter.min'),
             require('../dist/ReferenceObject.min'),
+            require('../dist/Collection.min'),
             require('../dist/underscore')
         );
     } else {
@@ -26,24 +28,27 @@
             root.Namespace,
             root.EventEmitter,
             root.ReferenceObject,
+            root.Collection,
             root._
         );
     }
-}(this, function (Class, Namespace, EventEmitter, ReferenceObject, underscore) {
+}(this, function (Class, Namespace, EventEmitter, ReferenceObject, Collection, underscore) {
     'use strict';
 
     if (typeof _ == 'undefined') {
         var _ = underscore;
     }
 
-	/* globals Class, Namespace, EventEmitter, ReferenceObject, _ */
+	/* globals Class, Namespace, EventEmitter, Collection, ReferenceObject, _ */
 
 	/**
 	 * The top-level namespace for this library
      * @namespace  Onto
      * @property {function}  Class               - The {@link https://github.com/storjarn/ee-class|ee-class} keyword, allowing to create basic classes
      * @property {Class}  EventEmitter        - The {@link https://github.com/storjarn/ee-class|ee-class} keyword, allowing to create event emitter classes
-     * @property {Class}  Namespace        	  - The {@link https://github.com/storjarn/ee-class|ee-class} keyword, allowing to create proper namespaces
+     * @property {Class}  Namespace           - The {@link https://github.com/storjarn/ee-class|ee-class} keyword, allowing to create proper namespaces
+     * @property {Class}  ReferenceObject           - The {@link https://github.com/storjarn/ee-class|ee-class} keyword, allowing to create simple first-class function instances around data
+     * @property {Class}  Collection           - The {@link https://github.com/storjarn/ee-class|ee-class} keyword, allowing to create collection-based classes
      * @property {object}  _        	      - An instance of the {@link http://underscorejs.org/|underscore} library
      */
 
@@ -56,6 +61,8 @@
         Namespace: Namespace,
         /* istanbul ignore next */
         ReferenceObject: ReferenceObject,
+        /* istanbul ignore next */
+        Collection: Collection,
         /* istanbul ignore next */
         _: underscore || _
     });
@@ -321,121 +328,466 @@ Iterating 100 times over 3d6+3
     })();
 
     //===========================================================
+    (function(){
 
-    /**
-     * Item Class constructor
-     * @class  Onto.Item
-     * @classdesc Represents an item in the Onto game system
-     * @param {object} data - The data that is going to be bound to this instance of Item
-     * @return {Onto.Item}
-     * @extends {Onto.Body}
-     * @inheritdoc Onto.Body
-     * @see Onto.Inventory
-     */
-    var Item = new Class({
-        inherits: Onto.Body,
-        init: function(data) {
-            var self = this;
-            data = data || {};
+        /**
+         * Base Class constructor
+         * @class  Onto.Base
+         * @classdesc Represents the base class in the Onto game system
+         * @param {object} data - The data that is going to be bound to this instance of Base
+         * @return {Onto.Base}
+         */
+        var Base = new Class({
+            isAbstract: true,
+            UniqueID: '',
+            init: function(data) {
+                var self = this;
 
-        }
-    });
+                var guid = function() {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+                        return v.toString(16);
+                    });
+                };
+                self.UniqueID = data.UniqueID || guid();
+            },
+            parse: function(data) {
+                if (Onto._.isObject(data)) {
+                    Onto._.forEach(data, function(value, key, list) {
+                        if (value.hasOwnProperty('FullyQualifiedName')) {
+                            data[key] = eval("new " + value.FullyQualifiedName + "("+JSON.stringify(value)+")");
+                        } else {
+                            data[key] = value;
+                        }
+                    });
+                }
+                return data;
+            },
+            /**
+             *  Overridden toJSON method.
+             * @function toJSON
+             * @instance
+             * @memberof Onto.Base
+             * @returns {object} Returns the data that can be persisted and also to initialize a class instance
+             */
+            toJSON: Class(function toJSON() {
+                var ret = {
+                    FullyQualifiedName: this.Type.getFullyQualifiedName ? this.Type.getFullyQualifiedName() : ''
+                };
+                ret = Onto._.extend(ret, this);
+                return ret;
+            })
+        });
 
-    Onto.addClass("Item", Item);
+        Onto.addClass("Base", Base);
+
+    })();
+
 
     //===========================================================
+    (function() {
 
-    /**
-     * Inventory Class constructor
-     * @class  Onto.Inventory
-     * @classdesc Represents an inventory in the Onto game system.  An inventory is a collection of {@link Onto.Item|Items}
-     * @param {object} data - The data that is going to be bound to this instance of Inventory
-     * @return {Onto.Inventory}
-     * @extends {Onto.Item}
-     * @inheritdoc Onto.Item
-     * @see Onto.Body
-     */
-    var Inventory = new Class({
-        inherits: Onto.Item,
-        init: function(data) {
-            var self = this;
-            data = data || {};
+        /**
+         * Body Class constructor
+         * @class  Onto.Body
+         * @abstract
+         * @classdesc Represents a physical body in the Onto game system. *Must be overridden!*
+         * @param {object} data - The data that is going to be bound to this instance of Body
+         * @extends {Onto.Base}
+         * @inheritdoc Onto.Base
+         * @see Onto.Item
+         * @see Onto.Being
+         */
+        var Body = new Class({
+            isAbstract: true,
+            inherits: Onto.Base,
+            init: function constructor(data) {
+                var self = this;
+                data = data || {};
 
-        },
+                constructor.super.call(self, data);
 
-        attachItem: {
-            value : function(item) {
+                /**
+                 * @member {number} Size - The size of the physical body.
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Body
+                 */
+                Class.define(self, 'Size', {
+                    get: function(){ throw new Error("Size must be overridden"); },
+                    enumerable: true,
+                    configurable: true
+                });
 
+                /**
+                 * @member {number} HitPoints - The number of points of the physical body before destruction or death.<br />Calculated by: _15 + Attributes.Strength + Attributes.Endurance * 2_
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Body
+                 */
+                Class.define(self, 'HitPoints', {
+                    get: function(){ throw new Error("HitPoints must be overridden"); },
+                    enumerable: true,
+                    configurable: true
+                });
+
+                /**
+                 * @member {number} CurrentDamage - The number of points of damage that currently exist through wounds on the physical body.
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Body
+                 */
+                Class.define(self, 'CurrentDamage', {
+                    get: function() {
+                        var dmg = 0;
+                        for (var loc in self.HitLocations) {
+                            for (var i = 0; i < self.HitLocations[loc].Wounds.length; ++i) {
+                                dmg += self.HitLocations[loc].Wounds[i].Value;
+                            }
+                        }
+                        return dmg;
+                    },
+                    enumerable: true
+                });
+
+                /**
+                 * Sets a wound to a location on this physical body, taking into account location armor.
+                 * @function Damage
+                 * @instance
+                 * @param {Onto.Wound} wound - The wound to set on the location.
+                 * @param {string} location - The location to set the wound on.
+                 * @memberof Onto.Body
+                 */
+                Class.define(self, 'Damage', {
+                    value: function(wound, location) {
+                        var armor = null;
+                        var origValue = wound.Value;
+                        for (var itemName in self.Inventory[location]) {
+                            if (!!self.Inventory[location][itemName] && !!self.Inventory[location][itemName].Armor) {
+                                armor = self.Inventory[location][itemName].Armor;
+                                Wound.Value -= (armor[wound.DamageType] || 0) * (armor.Value || 0);
+                            }
+                        }
+                        if (wound.Value < 1) {
+                            wound = null;
+                        } else if (origValue / 2 > wound.Value) {
+                            wound.DamageType = "Blunt";
+                            wound.Shard = null;
+                        }
+                        if (!!wound) {
+                            self.HitLocations[location].Wounds.push(wound);
+                        }
+                    },
+                    enumerable: true
+                });
+
+                /**
+                 * Sets the hit location data on the physical body at init.
+                 * @function LoadBodyDefinition
+                 * @instance
+                 * @param {object} configuration - The object that defines the hit locations on this body.
+                 * @memberof Onto.Body
+                 */
+                /* istanbul ignore next */
+                Class.define(self, 'LoadBodyDefinition', Class(function(configuration){
+                    var lookupIndex = 0;
+                    var lastIndex = 0;
+                    for(var key in configuration.Locations) {
+                        /*jshint -W083 */
+                        (function(key){
+                            var location = configuration.Locations[key];
+                            self.HitLocations[key] = location;
+                            self.Inventory[key] = location.InventorySlots;
+                            for(; lookupIndex < (lastIndex + location.Percentage); ++lookupIndex) {
+                                self.LocationLookup[lookupIndex.toString()] = key;
+                            }
+                            lastIndex = lookupIndex;
+                        })(key);
+                    }
+                    // console.log(self.HitLocations);
+                }));
+
+                /**
+                 * @member {object} HitLocations - The container for all of the body's hit locations.
+                 * @instance
+                 * @memberof Onto.Body
+                 */
+                Class.define(self, 'HitLocations', Class(data.HitLocations || {}).Enumerable());
+
+                /**
+                 * @member {object} LocationLookup - A quick lookup object for hit locations by percentage group.
+                 * @instance
+                 * @memberof Onto.Body
+                 */
+                /* istanbul ignore next */
+                Class.define(self, 'LocationLookup', Class({}));
+
+                /**
+                 * Looks up the hit location by a percentage-based index using {@link Onto.Body#LocationLookup}.
+                 * @function LookupLocation
+                 * @instance
+                 * @param {number} index - The percentage-based index that identifies the hit location.
+                 * @memberof Onto.Body
+                 */
+                /* istanbul ignore next */
+                Class.define(self, 'LookupLocation', Class(function(index) {
+                    var bodyLocation = self.LocationLookup[index.toString()];
+                    return self.HitLocations[bodyLocation];
+                }));
+
+                // self.LoadBodyDefinition({
+                //     Locations : {
+                //         Body: {
+                //             "Health" : function() { return self.HitPoints(); },
+                //             "Percentage" : 100,
+                //             "InventorySlots" : {},
+                //             "Wounds" : []
+                //         }
+                //     }
+                // });
             }
-        },
+        });
 
-        /**
-         * @member {Onto.Body} ParentContainer - The container of this inventory.  Can be null
-         * @instance
-         * @memberof Onto.Inventory
-         */
-        ParentContainer: null,
+        Onto.addClass("Body", Body);
 
-        /**
-         * @member {Onto.Body} ParentContainer - The container of this inventory.  Can be null
-         * @instance
-         * @memberof Onto.Inventory
-         */
-        Container: null
-    });
-
-
-    Onto.addClass("Inventory", Inventory);
+    })();
 
     //===========================================================
+    (function(){
 
-    /**
-     * Armor Class constructor
-     * @class  Onto.Armor
-     * @property {number} Value - The base protective value of the armor
-     * @property {number} Blunt - The value adjustment of the armor against blunt damage, between 0 and 1
-     * @property {number} Cut - The value adjustment of the armor against cut damage, between 0 and 1
-     * @property {number} Pierce - The value adjustment of the armor against piercing damage, between 0 and 1
-     * @property {number} Freeze - The value adjustment of the armor against freeze damage, between 0 and 1
-     * @property {number} Poison - The value adjustment of the armor against poison damage, between 0 and 1
-     * @return {Onto.Armor}
-     * @example
-"Leather Jerkin" : {
-    Weight: 3,
-    Warmth: 5,
-    Slots: 7,
-    Armor : {
-        Value : 5,
-        "Blunt" : .2,
-        "Cut" : .4,
-        "Burn" : .7,
-        "Pierce" : .2,
-        "Freeze" : .3,
-        "Poison" : .9
+        /**
+         * Item Class constructor
+         * @class  Onto.Item
+         * @classdesc Represents an item in the Onto game system
+         * @param {object} data - The data that is going to be bound to this instance of Item
+         * @return {Onto.Item}
+         * @extends {Onto.Body}
+         * @inheritdoc Onto.Body
+         */
+        var Item = new Class({
+            inherits: Onto.Body,
+            isAbstract: true,
+            init: function constructor(data) {
+                var self = this;
+                data = data || {};
+                constructor.super.call(self, data);
+
+                /**
+                 * @member {number} Size - The size of the item.
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Item
+                 */
+                Class.define(self, 'Size', Class(data.Size).Enumerable().Writable());
+
+                /**
+                 * @member {number} HitPoints - The number of points of the item before destruction or death.
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Item
+                 */
+                Class.define(self, 'HitPoints', Class(data.HitPoints).Enumerable().Writable());
+            }
+        });
+
+        Onto.addClass("Item", Item);
+
+    })();
+
+    //===========================================================
+    (function(){
+
+        /**
+         * ContainerItem Class constructor
+         * @class  Onto.ContainerItem
+         * @classdesc Represents a container item in the Onto game system
+         * @param {object} data - The data that is going to be bound to this instance of ContainerItem
+         * @return {Onto.ContainerItem}
+         * @extends {Onto.Item}
+         * @inheritdoc Onto.Item
+         * @see Onto.Inventory
+         */
+        var ContainerItem = new Class({
+            inherits: Onto.Item,
+            isAbstract: true,
+            init: function constructor(data) {
+                var self = this;
+                data = data || {};
+                constructor.super.call(self, data);
+                data = self.parse(data);
+            },
+
+            Capacity: {
+                get: function() {
+                    var self = this;
+                    var ret = {
+                        Current: 0,
+                        Maximum: self.Size
+                    };
+                    for(var i = 0; i < self.Container.length; ++i) {
+                        ret.Current += self.Container[i].Size;
+                    }
+                    return ret;
+                }
+            },
+
+            insertItem: {
+                value : function(item) {
+                    var self = this;
+                    var capacity = self.Capacity;
+                    if (item.UniqueID && capacity.Current + item.Size <= self.Size) {
+                        this.Container.push(item);
+                        this.Index[item.UniqueID] = item;
+                    }
+                }
+            },
+
+            removeItem: {
+                value : function(item) {
+                    var ret = [];
+                    this.find(item, function(item, index, self){
+                        ret.push(self.Container.splice(index, 1)[0]);
+                    });
+                    return ret;
+                }
+            },
+
+            find: {
+                value: function(itemType, callback) {
+                    var ret = [];
+                    var self = this;
+                    callback = callback || null;
+                    if (self.Index[itemType]) {
+                        ret.push(self.Index[itemType]);
+                    } else {
+                        for(var i = 0; i < this.Container.length; ++i) {
+                            var item = this.Container[i];
+                            if (
+                                (item.hasOwnProperty('FullyQualifiedName') && item.FullyQualifiedName == itemType)
+                                || (item instanceof itemType)
+                                || (item === itemType)
+                               )
+                            {
+                                if (!!callback) {
+                                    callback(item, index, self);
+                                } else {
+                                    ret.push({Item: item, Index: i});
+                                }
+                            }
+                            ++index;
+                        }
+                    }
+                    return ret;
+                }
+            },
+
+            /**
+             * @member {Onto.ContainerItem} ParentContainer - The container of this container.  Can be null
+             * @instance
+             * @memberof Onto.ContainerItem
+             */
+            ParentContainer: Class(null).Writable(),
+
+            /**
+             * @member {object} Container - The containing property of this container.  Can be null
+             * @instance
+             * @memberof Onto.ContainerItem
+             */
+            Container: Class(new Collection()),
+
+            /**
+             * @member {object} Index - The indexing property of this container.  Provides a constant-time lookup to items in the Container.
+             * @instance
+             * @memberof Onto.ContainerItem
+             */
+            Index: Class({})
+        });
+
+        Onto.addClass("ContainerItem", ContainerItem);
+
+    })();
+
+    //===========================================================
+    (function() {
+
+        /**
+         * Inventory Class constructor
+         * @class  Onto.Inventory
+         * @classdesc Represents an inventory in the Onto game system.  An inventory is a collection of {@link Onto.Item|Items}
+         * @param {object} data - The data that is going to be bound to this instance of Inventory
+         * @return {Onto.Inventory}
+         * @extends {Onto.ContainerItem}
+         * @inheritdoc Onto.ContainerItem
+         */
+        var Inventory = new Class({
+            inherits: Onto.ContainerItem,
+            init: function constructor(data) {
+                var self = this;
+                data = data || {};
+                constructor.super.call(self, data);
+                data = self.parse(data);
+            }
+        });
+
+        Onto.addClass("Inventory", Inventory);
+
+    })();
+
+    //===========================================================
+    (function(){
+
+        /**
+         * Armor Class constructor
+         * @class  Onto.Armor
+         * @property {number} Value - The base protective value of the armor
+         * @property {number} Blunt - The value adjustment of the armor against blunt damage, between 0 and 1
+         * @property {number} Cut - The value adjustment of the armor against cut damage, between 0 and 1
+         * @property {number} Pierce - The value adjustment of the armor against piercing damage, between 0 and 1
+         * @property {number} Freeze - The value adjustment of the armor against freeze damage, between 0 and 1
+         * @property {number} Poison - The value adjustment of the armor against poison damage, between 0 and 1
+         * @extends {Onto.Item}
+         * @inheritdoc Onto.Item
+         * @return {Onto.Armor}
+         * @example
+    "Leather Jerkin" : {
+        Weight: 3,
+        Warmth: 5,
+        Slots: 7,
+        Armor : {
+            Value : 5,
+            "Blunt" : .2,
+            "Cut" : .4,
+            "Burn" : .7,
+            "Pierce" : .2,
+            "Freeze" : .3,
+            "Poison" : .9
+        }
     }
-}
-     */
-    var Armor = new Class({
-        init: function constructor(data) {
+         */
+        var Armor = new Class({
+            inherits: Onto.Item,
+            init: function constructor(data) {
 
-            var self = this;
-            data = data || {};
+                var self = this;
+                data = data || {};
 
-            // Class.define(self, 'Skills', Class({}).Enumerable());
-        },
+                // Class.define(self, 'Skills', Class({}).Enumerable());
+            },
 
-        Value : Class(0).Enumerable().Writable(),
+            Value : Class(0).Enumerable().Writable(),
 
-        Blunt : Class(0).Enumerable().Writable(),
-        Cut : Class(0).Enumerable().Writable(),
-        Burn : Class(0).Enumerable().Writable(),
-        Pierce : Class(0).Enumerable().Writable(),
-        Freeze : Class(0).Enumerable().Writable(),
-        Poison : Class(0).Enumerable().Writable()
-    });
+            Blunt : Class(0).Enumerable().Writable(),
+            Cut : Class(0).Enumerable().Writable(),
+            Burn : Class(0).Enumerable().Writable(),
+            Pierce : Class(0).Enumerable().Writable(),
+            Freeze : Class(0).Enumerable().Writable(),
+            Poison : Class(0).Enumerable().Writable()
+        });
 
 
-    Onto.addClass("Armor", Armor);
+        Onto.addClass("Armor", Armor);
+
+    })();
 
     //===========================================================
 
@@ -454,8 +806,11 @@ Iterating 100 times over 3d6+3
          * @param  {number} value - The damage value
          * @param  {object} shard - The shard left by this damage, ex: a bullet
          * @param  {number} timestamp - The time that the damage occurred
+         * @extends {Onto.Base}
+         * @inheritdoc Onto.Base
          */
         var Damage = new Class({
+            inherits: Onto.Base,
             isAbstract: true,
             init: function constructor(value, shard, timestamp) {
                 var self = this;
@@ -583,11 +938,14 @@ Iterating 100 times over 3d6+3
          * @abstract
          * @classdesc Represents a base weapon in the Onto game system. *Must be overridden!*
          * @param  {number} data - The data that is bound to this instance of Weapon
+         * @extends {Onto.Item}
+         * @inheritdoc Onto.Item
          * @see Onto.Weapon.RangedWeapon
          * @see Onto.Weapon.ThrownWeapon
          */
         var Weapon = new Class({
             isAbstract: true,
+            inherits: Onto.Item,
             init: function(data) {
                 var self = this;
                 self.Attack.Bash = defaultBluntAttack;
@@ -707,37 +1065,43 @@ Iterating 100 times over 3d6+3
 
 
     //===========================================================
+    (function() {
 
-    /**
-     * Specialization Class constructor
-     * @class  Onto.Skill.Specialization
-     * @classdesc Represents an skill specialization in the Onto game system
-     * @param {object} data - The data that is going to be bound to this instance of Specialization
-     * @return {Onto.Skill.Specialization}
-     * @see Onto.Skill
-     * @see Onto.Skill.Specializations
-     */
-    var Specialization = new Class({
-        init: function(namePath, value, description, useCount) {
-            var self = this;
-            var _value = value;
-            useCount = useCount || 0;
-            var namePathSplitRev = namePath.split(".").reverse();
-            Class.define(self, "namePath", Class(namePath).Enumerable());
-            Class.define(self, "value", { get: function(){ return _value; }, enumerable: true});
-            Class.define(self, "valueOf", Class(function(){ return _value; }));
-            Class.define(self, "useCount", Class(useCount).Enumerable().Writable());
-            Class.define(
-                self,
-                "description",
-                Class(description || "The general skill of " + namePathSplitRev.join(' ').toLowerCase()).Enumerable()
-            );
+        /**
+         * Specialization Class constructor
+         * @class  Onto.Skill.Specialization
+         * @classdesc Represents an skill specialization in the Onto game system
+         * @param {object} data - The data that is going to be bound to this instance of Specialization
+         * @return {Onto.Skill.Specialization}
+         * @extends {Onto.Base}
+         * @inheritdoc Onto.Base
+         * @see Onto.Skill
+         * @see Onto.Skill.Specializations
+         */
+        var Specialization = new Class({
+            inherits: Onto.Base,
+            init: function(namePath, value, description, useCount) {
+                var self = this;
+                var _value = value;
+                useCount = useCount || 0;
+                var namePathSplitRev = namePath.split(".").reverse();
+                Class.define(self, "namePath", Class(namePath).Enumerable());
+                Class.define(self, "value", { get: function(){ return _value; }, enumerable: true});
+                Class.define(self, "valueOf", Class(function(){ return _value; }));
+                Class.define(self, "useCount", Class(useCount).Enumerable().Writable());
+                Class.define(
+                    self,
+                    "description",
+                    Class(description || "The general skill of " + namePathSplitRev.join(' ').toLowerCase()).Enumerable()
+                );
 
-            Class.define(self, "increment", Class(function(){ ++_value; }));
-        }
-    });
+                Class.define(self, "increment", Class(function(){ ++_value; }));
+            }
+        });
 
-    Onto.Skill.addClass("Specialization", Specialization);
+        Onto.Skill.addClass("Specialization", Specialization);
+
+    })();
     //===========================================================
 
     /**
@@ -1421,901 +1785,723 @@ var Specializations = {
  */
 
     //===========================================================
+    (function() {
 
-    /**
-     * Soul Class constructor
-     * @class  Onto.Soul
-     * @classdesc Represents a soul in the Onto game system.
-     * @param {object} data - The data that is going to be bound to this instance of Soul
-     * @return {Onto.Soul}
-     * @see Onto.Spirit
-     */
-    var Soul = new Class({
-        init: function(data) {
-            var self = this;
-            data = data || {};
+        /**
+         * Soul Class constructor
+         * @class  Onto.Soul
+         * @classdesc Represents a soul in the Onto game system.
+         * @param {object} data - The data that is going to be bound to this instance of Soul
+         * @return {Onto.Soul}
+         * @extends {Onto.Base}
+         * @inheritdoc Onto.Base
+         * @see Onto.Spirit
+         */
+        var Soul = new Class({
+            inherits: Onto.Base,
+            init: function(data) {
+                var self = this;
+                data = data || {};
 
-            var defaultAttributes = {
-                Perception      : 9,
-                Luck            : 9
-            };
+                var defaultAttributes = {
+                    Perception      : 9,
+                    Luck            : 9
+                };
 
-            /**
-             * @member {object} Attributes - The container for the instance's main attributes.
-             * @instance
-             * @readonly
-             * @memberof Onto.Soul
-             * @property {number} Perception - The ability to see, hear, taste and notice unusual things. The basis of a soul's power.
-             * @property {number} Luck - The serendipity potential of the soul.  Contributes to the soul's power.
-             */
-            var attributes = Onto._.extend(self.Attributes || defaultAttributes, data.Attributes || defaultAttributes);
-            Class.define(self, 'Attributes', Class({}).Enumerable());
-            for(var key in attributes) {
-                Class.define(self.Attributes, key, Class(attributes[key]).Enumerable());
-            }
-
-            /**
-             * @member {object} Power - The amount of power the soul has for a number of things.<br />Calculated by: _Attributes.Perception + Attributes.Luck_
-             * @instance
-             * @readonly
-             * @memberof Onto.Soul
-             */
-            Class.define(self, 'Power', {
-                get: function(){ return (self.Attributes.Perception + self.Attributes.Luck); },
-                enumerable: true
-            });
-        },
-
-        Power : null
-    });
-
-
-    Onto.addClass("Soul", Soul);
-
-    //===========================================================
-
-    /**
-     * Soul Class constructor
-     * @class  Onto.Spirit
-     * @classdesc Represents a soul in the Onto game system.
-     * @param {object} data - The data that is going to be bound to this instance of Soul
-     * @return {Onto.Spirit}
-     * @extends {Onto.Soul}
-     * @inheritdoc Onto.Soul
-     * @see Onto.Body
-     */
-    var Spirit = new Class({
-        inherits: Onto.Soul,
-        init: function constructor(data) {
-            var self = this;
-            data = data || {};
-
-            var Attributes = {
-                Charisma        : 9,
-                Intelligence    : 9
-            };
-
-            /**
-             * @member {object} Attributes - The container for the instance's main attributes.
-             * @instance
-             * @readonly
-             * @memberof Onto.Soul
-             * @property {number} Perception - The ability to see, hear, taste and notice unusual things. The basis of a soul's power.
-             * @property {number} Luck - The serendipity potential of the soul.  Contributes to the soul's power.
-             * @property {number} Intelligence - The smarts of the spirit.
-             * @property {number} Charisma - The charm and beauty of the spirit.
-             */
-            data.Attributes = Onto._.extend(self.Attributes || Attributes, data.Attributes || Attributes);
-            constructor.super.call(self, data);
-
-            /**
-             * @member {object} Chi - The amount of power the spirit has for a number of things.<br />Calculated by: _Attributes.Luck / 2 + Attributes.Perception + Attributes.Intelligence / 2_
-             * @instance
-             * @readonly
-             * @memberof Onto.Spirit
-             */
-            Class.define(self, 'Chi', {
-                get: function(){ return (self.Attributes.Luck / 2) + self.Attributes.Perception + (self.Attributes.Intelligence / 2); },
-                enumerable: true
-            });
-        },
-
-        Chi : null
-    });
-
-
-    Onto.addClass("Spirit", Spirit);
-
-    //===========================================================
-
-    /**
-     * Body Class constructor
-     * @class  Onto.Body
-     * @abstract
-     * @classdesc Represents a physical body in the Onto game system. *Must be overridden!*
-     * @param {object} data - The data that is going to be bound to this instance of Body
-     * @see Onto.Item
-     * @see Onto.Being
-     */
-    var Body = new Class({
-        isAbstract: true,
-        init: function constructor(data) {
-            var self = this;
-            data = data || {};
-
-            /**
-             * @member {number} Size - The size of the physical body.
-             * @instance
-             * @readonly
-             * @memberof Onto.Body
-             */
-            Class.define(self, 'Size', {
-                get: function(){ throw new Error("Size must be overridden"); },
-                enumerable: true,
-                configurable: true
-            });
-
-            /**
-             * @member {number} HitPoints - The number of points of the physical body before destruction or death.<br />Calculated by: _15 + Attributes.Strength + Attributes.Endurance * 2_
-             * @instance
-             * @readonly
-             * @memberof Onto.Body
-             */
-            Class.define(self, 'HitPoints', {
-                get: function(){ throw new Error("HitPoints must be overridden"); },
-                enumerable: true,
-                configurable: true
-            });
-
-            /**
-             * @member {number} CurrentDamage - The number of points of damage that currently exist through wounds on the physical body.
-             * @instance
-             * @readonly
-             * @memberof Onto.Body
-             */
-            Class.define(self, 'CurrentDamage', {
-                get: function() {
-                    var dmg = 0;
-                    for (var loc in self.HitLocations) {
-                        for (var i = 0; i < self.HitLocations[loc].Wounds.length; ++i) {
-                            dmg += self.HitLocations[loc].Wounds[i].Value;
-                        }
-                    }
-                    return dmg;
-                },
-                enumerable: true
-            });
-
-            /**
-             * Sets a wound to a location on this physical body, taking into account location armor.
-             * @function Damage
-             * @instance
-             * @param {Onto.Wound} wound - The wound to set on the location.
-             * @param {string} location - The location to set the wound on.
-             * @memberof Onto.Body
-             */
-            Class.define(self, 'Damage', {
-                value: function(wound, location) {
-                    var armor = null;
-                    var origValue = wound.Value;
-                    for (var itemName in self.Inventory[location]) {
-                        if (!!self.Inventory[location][itemName] && !!self.Inventory[location][itemName].Armor) {
-                            armor = self.Inventory[location][itemName].Armor;
-                            Wound.Value -= (armor[wound.DamageType] || 0) * (armor.Value || 0);
-                        }
-                    }
-                    if (wound.Value < 1) {
-                        wound = null;
-                    } else if (origValue / 2 > wound.Value) {
-                        wound.DamageType = "Blunt";
-                        wound.Shard = null;
-                    }
-                    if (!!wound) {
-                        self.HitLocations[location].Wounds.push(wound);
-                    }
-                },
-                enumerable: true
-            });
-
-            /**
-             * Sets the hit location data on the physical body at init.
-             * @function LoadBodyDefinition
-             * @instance
-             * @param {object} configuration - The object that defines the hit locations on this body.
-             * @memberof Onto.Body
-             */
-            /* istanbul ignore next */
-            Class.define(self, 'LoadBodyDefinition', Class(function(configuration){
-                var lookupIndex = 0;
-                var lastIndex = 0;
-                for(var key in configuration.Locations) {
-                    /*jshint -W083 */
-                    (function(key){
-                        var location = configuration.Locations[key];
-                        self.HitLocations[key] = location;
-                        self.Inventory[key] = location.InventorySlots;
-                        for(; lookupIndex < (lastIndex + location.Percentage); ++lookupIndex) {
-                            self.LocationLookup[lookupIndex.toString()] = key;
-                        }
-                        lastIndex = lookupIndex;
-                    })(key);
+                /**
+                 * @member {object} Attributes - The container for the instance's main attributes.
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Soul
+                 * @property {number} Perception - The ability to see, hear, taste and notice unusual things. The basis of a soul's power.
+                 * @property {number} Luck - The serendipity potential of the soul.  Contributes to the soul's power.
+                 */
+                var attributes = Onto._.extend(self.Attributes || defaultAttributes, data.Attributes || defaultAttributes);
+                Class.define(self, 'Attributes', Class({}).Enumerable());
+                for(var key in attributes) {
+                    Class.define(self.Attributes, key, Class(attributes[key]).Enumerable());
                 }
-                // console.log(self.HitLocations);
-            }));
 
-            /**
-             * @member {object} HitLocations - The container for all of the body's hit locations.
-             * @instance
-             * @memberof Onto.Body
-             */
-            Class.define(self, 'HitLocations', Class(data.HitLocations || {}).Enumerable());
+                /**
+                 * @member {object} Power - The amount of power the soul has for a number of things.<br />Calculated by: _Attributes.Perception + Attributes.Luck_
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Soul
+                 */
+                Class.define(self, 'Power', {
+                    get: function(){ return (self.Attributes.Perception + self.Attributes.Luck); },
+                    enumerable: true
+                });
+            },
 
-            /**
-             * @member {object} LocationLookup - A quick lookup object for hit locations by percentage group.
-             * @instance
-             * @memberof Onto.Body
-             */
-            /* istanbul ignore next */
-            Class.define(self, 'LocationLookup', Class({}));
-
-            /**
-             * Looks up the hit location by a percentage-based index using {@link Onto.Body#LocationLookup}.
-             * @function LookupLocation
-             * @instance
-             * @param {number} index - The percentage-based index that identifies the hit location.
-             * @memberof Onto.Body
-             */
-            /* istanbul ignore next */
-            Class.define(self, 'LookupLocation', Class(function(index) {
-                var bodyLocation = self.LocationLookup[index.toString()];
-                return self.HitLocations[bodyLocation];
-            }));
-
-            // self.LoadBodyDefinition({
-            //     Locations : {
-            //         Body: {
-            //             "Health" : function() { return self.HitPoints(); },
-            //             "Percentage" : 100,
-            //             "InventorySlots" : {},
-            //             "Wounds" : []
-            //         }
-            //     }
-            // });
-        }
-    });
+            Power : null
+        });
 
 
-    Onto.addClass("Body", Body);
+        Onto.addClass("Soul", Soul);
 
+    })();
 
     //===========================================================
+    (function(){
 
-    /**
-     * Being Class constructor
-     * @class  Onto.Being
-     * @abstract
-     * @classdesc Represents a living being in the Onto game system. *Must be overridden!*
-     * @param {object} data - The data that is going to be bound to this instance of Being
-     * @extends Onto.Body
-     * @inheritdoc Onto.Body
-     * @see Onto.Humanoid
-     */
-    var Being = new Class({
-        inherits: Onto.Body,
-        isAbstract: true,
-        init: function constructor(data) {
-            var self = this;
-            data = data || {};
+        /**
+         * Spirit Class constructor
+         * @class  Onto.Spirit
+         * @classdesc Represents a soul in the Onto game system.
+         * @param {object} data - The data that is going to be bound to this instance of Soul
+         * @return {Onto.Spirit}
+         * @extends {Onto.Soul}
+         * @inheritdoc Onto.Soul
+         * @see Onto.Body
+         */
+        var Spirit = new Class({
+            inherits: Onto.Soul,
+            init: function constructor(data) {
+                var self = this;
+                data = data || {};
 
-            var defaultAttributes = {
-                Strength        : 9,
-                Endurance       : 9,
-                Agility         : 9
-            };
+                var Attributes = {
+                    Charisma        : 9,
+                    Intelligence    : 9
+                };
 
-            /**
-             * @member {object} Attributes - The container for the instance's main attributes.
-             * @instance
-             * @readonly
-             * @memberof Onto.Being
-             * @property {number} Perception - The ability to see, hear, taste and notice unusual things. The basis of a soul's power.
-             * @property {number} Luck - The serendipity potential of the soul.  Contributes to the soul's power.
-             * @property {number} Intelligence - The smarts of the spirit.
-             * @property {number} Charisma - The charm and beauty of the spirit.
-             * @property {number} Strength - The strength of the physical body.
-             * @property {number} Endurance - The endurance of the physical body.
-             * @property {number} Agility - The agility of the physical body.
-             */
-            data.Attributes = Onto._.extend(defaultAttributes, data.Attributes || {});
-            data.HitLocations = Onto._.extend(this.HitLocations || {}, data.HitLocations || {});
-            data.Inventory = Onto._.extend(this.Inventory || {}, data.Inventory || {});
-            constructor.super.call(self, data);
+                /**
+                 * @member {object} Attributes - The container for the instance's main attributes.
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Soul
+                 * @property {number} Perception - The ability to see, hear, taste and notice unusual things. The basis of a soul's power.
+                 * @property {number} Luck - The serendipity potential of the soul.  Contributes to the soul's power.
+                 * @property {number} Intelligence - The smarts of the spirit.
+                 * @property {number} Charisma - The charm and beauty of the spirit.
+                 */
+                data.Attributes = Onto._.extend(self.Attributes || Attributes, data.Attributes || Attributes);
+                constructor.super.call(self, data);
 
-            Class.define(self, 'Attributes', Class({}).Enumerable());
+                /**
+                 * @member {object} Chi - The amount of power the spirit has for a number of things.<br />Calculated by: _Attributes.Luck / 2 + Attributes.Perception + Attributes.Intelligence / 2_
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Spirit
+                 */
+                Class.define(self, 'Chi', {
+                    get: function(){ return (self.Attributes.Luck / 2) + self.Attributes.Perception + (self.Attributes.Intelligence / 2); },
+                    enumerable: true
+                });
+            },
 
-            var spirit = new Onto.Spirit(data);
-            for(var attrName in spirit.Attributes) {
-                Class.define(self.Attributes, attrName, Class(spirit.Attributes[attrName].valueOf()).Enumerable());
+            Chi : null
+        });
+
+
+        Onto.addClass("Spirit", Spirit);
+
+    })();
+
+    //===========================================================
+    (function() {
+
+        /**
+         * Being Class constructor
+         * @class  Onto.Being
+         * @abstract
+         * @classdesc Represents a living being in the Onto game system. *Must be overridden!*
+         * @param {object} data - The data that is going to be bound to this instance of Being
+         * @extends Onto.Body
+         * @inheritdoc Onto.Body
+         * @see Onto.Humanoid
+         */
+        var Being = new Class({
+            inherits: Onto.Body,
+            isAbstract: true,
+            init: function constructor(data) {
+                var self = this;
+                data = data || {};
+
+                var defaultAttributes = {
+                    Strength        : 9,
+                    Endurance       : 9,
+                    Agility         : 9
+                };
+
+                /**
+                 * @member {object} Attributes - The container for the instance's main attributes.
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Being
+                 * @property {number} Perception - The ability to see, hear, taste and notice unusual things. The basis of a soul's power.
+                 * @property {number} Luck - The serendipity potential of the soul.  Contributes to the soul's power.
+                 * @property {number} Intelligence - The smarts of the spirit.
+                 * @property {number} Charisma - The charm and beauty of the spirit.
+                 * @property {number} Strength - The strength of the physical body.
+                 * @property {number} Endurance - The endurance of the physical body.
+                 * @property {number} Agility - The agility of the physical body.
+                 */
+                data.Attributes = Onto._.extend(defaultAttributes, data.Attributes || {});
+                data.HitLocations = Onto._.extend(this.HitLocations || {}, data.HitLocations || {});
+                data.Inventory = Onto._.extend(this.Inventory || {}, data.Inventory || {});
+                constructor.super.call(self, data);
+
+                Class.define(self, 'Attributes', Class({}).Enumerable());
+
+                var spirit = new Onto.Spirit(data);
+                for(var attrName in spirit.Attributes) {
+                    Class.define(self.Attributes, attrName, Class(spirit.Attributes[attrName].valueOf()).Enumerable());
+                }
+
+                Class.define(self, "Chi", Class(spirit.Chi).Enumerable());
+                Class.define(self, "Power", Class(spirit.Power).Enumerable());
+
+                // Class.implement(spirit, self);
+
+
+                /**
+                 * @member {number} Age - The age of the humanoid
+                 * @instance
+                 * @memberof Onto.Humanoid
+                 */
+                Class.define(self, 'Age', Class(data.Age || 18).Writable().Enumerable());
+
+                /**
+                 * @member {string} Gender - The gender of the humanoid
+                 * @instance
+                 * @memberof Onto.Humanoid
+                 */
+                this.Gender = data.Gender || "Male";
+                /**
+                 * @member {string} Name - The name of the humanoid
+                 * @instance
+                 * @memberof Onto.Humanoid
+                 */
+                this.Name = data.Name;
+
+                /**
+                 * @member {number} Size - The size of the physical body.<br />Calculated by: _(Attributes.Strength + Attributes.Endurance) / 2_
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Being
+                 */
+                Class.define(self, 'Size', {
+                    get: function(){ return (self.Attributes.Strength + self.Attributes.Endurance) / 2; },
+                    enumerable: true
+                });
+
+                /**
+                 * @member {number} HitPoints - The number of points of the physical body before destruction or death.<br />Calculated by: _15 + Attributes.Strength + Attributes.Endurance * 2_
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Being
+                 */
+                Class.define(self, 'HitPoints', {
+                    get: function(){ return 15 + self.Attributes.Strength + (self.Attributes.Endurance * 2); },
+                    enumerable: true
+                });
+
+                /**
+                 * @member {number} MovementSpeed - The number of points in feet per second the physical body can move.<br />Calculated by: _Math.max(1 + Attributes.Agility - CurrentDamage, 0)_
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Being
+                 */
+                Class.define(self, 'MovementSpeed', {
+                    get: function(){ return Math.max(1 + self.Attributes.Agility - self.CurrentDamage, 0); },
+                    enumerable: true
+                });
+
+                /**
+                 * @member {number} AttackSpeed - The number of points representing the initiative rank of the physical body.<br />Calculated by: _Math.max(20 - Attributes.Agility + CurrentDamage, 1)_
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Being
+                 */
+                Class.define(self, 'AttackSpeed', {
+                    get: function(){ return Math.max(20 - self.Attributes.Agility + self.CurrentDamage, 1); },
+                    enumerable: true
+                });
+
+                /**
+                 * @member {number} MaxCarryWeight - The number of pounds the physical body can carry before at half the {@link Onto.Being#MovementSpeed} before tiring effects take place.<br />Calculated by: _12 * Attributes.Strength_
+                 * @instance
+                 * @readonly
+                 * @memberof Onto.Being
+                 */
+                Class.define(self, 'MaxCarryWeight', {
+                    get: function(){ return 12 * self.Attributes.Strength; },
+                    enumerable: true
+                });
+
+                /**
+                 * @member {object} HitLocations - The container for all of the body's hit locations.
+                 * @instance
+                 * @memberof Onto.Being
+                 */
+                // Class.define(self, 'HitLocations', Class(data.HitLocations).Enumerable().Writable());
+
+                /**
+                 * @member {Onto.Inventory} Inventory - The container for all of the items in the body's physical possession.
+                 * @instance
+                 * @memberof Onto.Being
+                 */
+                Class.define(self, 'Inventory', Class(data.Inventory).Enumerable().Writable());
+
             }
+        });
 
-            Class.define(self, "Chi", Class(spirit.Chi).Enumerable());
-            Class.define(self, "Power", Class(spirit.Power).Enumerable());
+        Onto.addClass("Being", Being);
 
-            // Class.implement(spirit, self);
-
-
-            /**
-             * @member {number} Age - The age of the humanoid
-             * @instance
-             * @memberof Onto.Humanoid
-             */
-            Class.define(self, 'Age', Class(data.Age || 18).Writable().Enumerable());
-
-            /**
-             * @member {string} Gender - The gender of the humanoid
-             * @instance
-             * @memberof Onto.Humanoid
-             */
-            this.Gender = data.Gender || "Male";
-            /**
-             * @member {string} Name - The name of the humanoid
-             * @instance
-             * @memberof Onto.Humanoid
-             */
-            this.Name = data.Name;
-
-            /**
-             * @member {number} Size - The size of the physical body.<br />Calculated by: _(Attributes.Strength + Attributes.Endurance) / 2_
-             * @instance
-             * @readonly
-             * @memberof Onto.Being
-             */
-            Class.define(self, 'Size', {
-                get: function(){ return (self.Attributes.Strength + self.Attributes.Endurance) / 2; },
-                enumerable: true
-            });
-
-            /**
-             * @member {number} HitPoints - The number of points of the physical body before destruction or death.<br />Calculated by: _15 + Attributes.Strength + Attributes.Endurance * 2_
-             * @instance
-             * @readonly
-             * @memberof Onto.Being
-             */
-            Class.define(self, 'HitPoints', {
-                get: function(){ return 15 + self.Attributes.Strength + (self.Attributes.Endurance * 2); },
-                enumerable: true
-            });
-
-            /**
-             * @member {number} MovementSpeed - The number of points in feet per second the physical body can move.<br />Calculated by: _Math.max(1 + Attributes.Agility - CurrentDamage, 0)_
-             * @instance
-             * @readonly
-             * @memberof Onto.Being
-             */
-            Class.define(self, 'MovementSpeed', {
-                get: function(){ return Math.max(1 + self.Attributes.Agility - self.CurrentDamage, 0); },
-                enumerable: true
-            });
-
-            /**
-             * @member {number} AttackSpeed - The number of points representing the initiative rank of the physical body.<br />Calculated by: _Math.max(20 - Attributes.Agility + CurrentDamage, 1)_
-             * @instance
-             * @readonly
-             * @memberof Onto.Being
-             */
-            Class.define(self, 'AttackSpeed', {
-                get: function(){ return Math.max(20 - self.Attributes.Agility + self.CurrentDamage, 1); },
-                enumerable: true
-            });
-
-            /**
-             * @member {number} MaxCarryWeight - The number of pounds the physical body can carry before at half the {@link Onto.Being#MovementSpeed} before tiring effects take place.<br />Calculated by: _12 * Attributes.Strength_
-             * @instance
-             * @readonly
-             * @memberof Onto.Being
-             */
-            Class.define(self, 'MaxCarryWeight', {
-                get: function(){ return 12 * self.Attributes.Strength; },
-                enumerable: true
-            });
-
-            /**
-             * @member {object} HitLocations - The container for all of the body's hit locations.
-             * @instance
-             * @memberof Onto.Being
-             */
-            // Class.define(self, 'HitLocations', Class(data.HitLocations).Enumerable().Writable());
-            /**
-             * @member {Onto.Inventory} Inventory - The container for all of the items in the body's physical possession.
-             * @instance
-             * @memberof Onto.Being
-             */
-            /* istanbul ignore next */
-            Class.define(self, 'Inventory', Class(data.Inventory).Enumerable().Writable());
-
-            /**
-             * @member {object} toJSON - Overridden toJSON method.
-             * @instance
-             * @memberof Onto.Being
-             */
-            /* istanbul ignore next */
-            // Class.define(self, 'toJSON', Class(function() {
-            //     return {
-            //         Inventory : self.Inventory
-            //     };
-            // }));
-
-            // self.LoadBodyDefinition({
-            //     Locations : {
-            //         Being: {
-            //             "Health" : function() { return self.HitPoints(); },
-            //             "Percentage" : 100,
-            //             "InventorySlots" : {},
-            //             "Wounds" : []
-            //         }
-            //     }
-            // });
-        }
-    });
-
-
-    Onto.addClass("Being", Being);
+    })();
 
 
 	//===========================================================
+	(function(){
 
-	/**
-     * Humanoid Class constructor
-     * @class  Onto.Humanoid
-     * @classdesc Represents a humanoid in the Onto game system.
-     * @param {string} name - The name of the humanoid
-     * @param {object} data - The data that is going to be bound to this instance of Humanoid
-     * @return {Onto.Humanoid}
-     * @extends Onto.Being
-     * @inheritdoc Onto.Being
-     */
-	var Humanoid = new Class({
-		inherits: Onto.Being,
-	    init: function constructor(name, data) {
+		/**
+	     * Humanoid Class constructor
+	     * @class  Onto.Humanoid
+	     * @classdesc Represents a humanoid in the Onto game system.
+	     * @param {object} data - The data that is going to be bound to this instance of Humanoid
+	     * @return {Onto.Humanoid}
+	     * @extends Onto.Being
+	     * @inheritdoc Onto.Being
+	     */
+		var Humanoid = new Class({
+			inherits: Onto.Being,
+			isAbstract: true,
+		    init: function constructor(data) {
 
-	    	var self = this;
-            data = data || {};
+		    	var self = this;
+	            data = data || {};
 
-            data.Attributes = Onto._.extend(self.Attributes || {}, data.Attributes || {});
+	            data.Attributes = Onto._.extend(self.Attributes || {}, data.Attributes || {});
 
-	        data.Specializations = data.Specializations || {};
-	        data.HitLocations = data.HitLocations || {};
-	        data.Inventory = data.Inventory || {};
-	        data.Name = name;
+		        data.Specializations = data.Specializations || {};
+		        data.HitLocations = data.HitLocations || {};
+		        data.Inventory = data.Inventory || {};
 
-	        constructor.super.call(self, data);
+		        constructor.super.call(self, data);
 
-	        // Skills
-	        /**
-	         * @member {object} Skills - The base skills container of the humanoid
-	         * @see {@link Onto.Humanoid#Skill|Skill}
-	         * @instance
-	         * @memberof Onto.Humanoid
-	         * @property {number} Firearms - The skill of using weapons like pistols and rifles
-	         * <br />_(Attributes.Agility + 10)_
-	         *
-	         * @property {number} Archery - The skill of using weapons like bows and crossbows
-	         * <br />_(2 + Attributes.Agility * 2 + Attributes.Strength / 2)_
-	         *
-	         * @property {number} Explosives - The skill of using explosives like dynamite and grenades
-	         * <br />_(2 + Attributes.Perception * 2 + Attributes.Luck / 2)_
-	         *
-	         * @property {number} Melee - The skill of using hand-to-hand combat with and without weapons
-	         * <br />_(30 + 2 * Attributes.Agility + 2 * Attributes.Strength)_
-	         *
-	         * @property {number} Throwing - The skill of throwing things like grenades and spears
-	         * <br />_(3 * Attributes.Agility + Attributes.Strength / 2)_
-	         *
-	         * @property {number} Lockpick - The skill of unlocking locks without keys
-	         * <br />_(20 + Attributes.Perception / 2 + Attributes.Agility / 2)_
-	         *
-	         * @property {number} Mechanics - The skill of using and repairing mechanical devices
-	         * <br />_(20 + Attributes.Intelligence)_
-	         *
-	         * @property {number} Medicine - The skill of using first aid and surgery
-	         * <br />_(Attributes.Perception + Attributes.Intelligence * 2 + Attributes.Luck / 2)_
-	         *
-	         * @property {number} Science - The skill of using the scientific method and testing results
-	         * <br />_(Attributes.Perception + Attributes.Intelligence * 2 + Attributes.Luck / 2)_
-	         *
-	         * @property {number} Craftsmanship - The skill of using the scientific method and testing results
-	         * <br />_(Attributes.Intelligence / 2 + Attributes.Luck / 2 + Attributes.Perception / 2 + Attributes.Agility / 2)_
-	         *
-	         * @property {number} Stealth - The skill of sneaking
-	         * <br />_(2 + Attributes.Agility * 2 + Attributes.Luck / 2)_
-	         *
-	         * @property {number} Survival - The skill of surviving in the outdoors
-	         * <br />_(2 + Attributes.Endurance + Attributes.Intelligence + Attributes.Luck / 2)_
-	         *
-	         * @property {number} Gambling - The skill of betting money on games
-	         * <br />_(2 + Attributes.Perception * 2 + Attributes.Luck / 2)_
-	         *
-	         * @property {number} Speech - The skill of getting your way in conversation
-	         * <br />_(2 + Attributes.Charisma * 2 + Attributes.Luck / 2)_
-	         *
-	         * @property {number} Athletics - The skill of being physically fit
-	         * <br />_(2 + Attributes.Agility + Attributes.Strength + Attributes.Endurance / 2)_
-	         *
-	         * @property {number} Piloting - The skill of driving vehicles
-	         * <br />_(2 * Attributes.Agility + Attributes.Perception)_
-	         *
-	         * @property {number} History - The skill of knowing the past
-	         * <br />_(2 + Attributes.Intelligence * 2 + Attributes.Perception / 2)_
-	         */
+		        // Skills
+		        /**
+		         * @member {object} Skills - The base skills container of the humanoid
+		         * @see {@link Onto.Humanoid#Skill|Skill}
+		         * @instance
+		         * @memberof Onto.Humanoid
+		         * @property {number} Firearms - The skill of using weapons like pistols and rifles
+		         * <br />_(Attributes.Agility + 10)_
+		         *
+		         * @property {number} Archery - The skill of using weapons like bows and crossbows
+		         * <br />_(2 + Attributes.Agility * 2 + Attributes.Strength / 2)_
+		         *
+		         * @property {number} Explosives - The skill of using explosives like dynamite and grenades
+		         * <br />_(2 + Attributes.Perception * 2 + Attributes.Luck / 2)_
+		         *
+		         * @property {number} Melee - The skill of using hand-to-hand combat with and without weapons
+		         * <br />_(30 + 2 * Attributes.Agility + 2 * Attributes.Strength)_
+		         *
+		         * @property {number} Throwing - The skill of throwing things like grenades and spears
+		         * <br />_(3 * Attributes.Agility + Attributes.Strength / 2)_
+		         *
+		         * @property {number} Lockpick - The skill of unlocking locks without keys
+		         * <br />_(20 + Attributes.Perception / 2 + Attributes.Agility / 2)_
+		         *
+		         * @property {number} Mechanics - The skill of using and repairing mechanical devices
+		         * <br />_(20 + Attributes.Intelligence)_
+		         *
+		         * @property {number} Medicine - The skill of using first aid and surgery
+		         * <br />_(Attributes.Perception + Attributes.Intelligence * 2 + Attributes.Luck / 2)_
+		         *
+		         * @property {number} Science - The skill of using the scientific method and testing results
+		         * <br />_(Attributes.Perception + Attributes.Intelligence * 2 + Attributes.Luck / 2)_
+		         *
+		         * @property {number} Craftsmanship - The skill of using the scientific method and testing results
+		         * <br />_(Attributes.Intelligence / 2 + Attributes.Luck / 2 + Attributes.Perception / 2 + Attributes.Agility / 2)_
+		         *
+		         * @property {number} Stealth - The skill of sneaking
+		         * <br />_(2 + Attributes.Agility * 2 + Attributes.Luck / 2)_
+		         *
+		         * @property {number} Survival - The skill of surviving in the outdoors
+		         * <br />_(2 + Attributes.Endurance + Attributes.Intelligence + Attributes.Luck / 2)_
+		         *
+		         * @property {number} Gambling - The skill of betting money on games
+		         * <br />_(2 + Attributes.Perception * 2 + Attributes.Luck / 2)_
+		         *
+		         * @property {number} Speech - The skill of getting your way in conversation
+		         * <br />_(2 + Attributes.Charisma * 2 + Attributes.Luck / 2)_
+		         *
+		         * @property {number} Athletics - The skill of being physically fit
+		         * <br />_(2 + Attributes.Agility + Attributes.Strength + Attributes.Endurance / 2)_
+		         *
+		         * @property {number} Piloting - The skill of driving vehicles
+		         * <br />_(2 * Attributes.Agility + Attributes.Perception)_
+		         *
+		         * @property {number} History - The skill of knowing the past
+		         * <br />_(2 + Attributes.Intelligence * 2 + Attributes.Perception / 2)_
+		         */
 
-	        Class.define(self, 'Skills', Class({}).Enumerable());
+		        Class.define(self, 'Skills', Class({}).Enumerable());
 
-	        var skillBase = {
-	        	'Firearms': function(){
-	                return self.Attributes.Agility + 10;
-	            },
-	            'Archery': function(){
-	                return 2 + (self.Attributes.Agility * 2) + (self.Attributes.Strength / 2);
-	            },
-	            'Explosives' : function(){
-	                return 2 + (self.Attributes.Perception * 2) + (self.Attributes.Luck / 2);
-	            },
-	            'Melee' : function(){
-	                return 30 + (2 * self.Attributes.Agility) + (2 * self.Attributes.Strength);
-	            },
-	            'Throwing' : function(){
-	                return 3 * self.Attributes.Agility + self.Attributes.Strength / 2;
-	            },
-	            'Lockpick' : function(){
-	                return 20 + (self.Attributes.Perception / 2) + (self.Attributes.Agility / 2);
-	            },
-	            'Mechanics' : function(){
-	                return 20 + self.Attributes.Intelligence;
-	            },
-	            'Medicine' : function(){
-	                return self.Attributes.Perception + (self.Attributes.Intelligence * 2) + (self.Attributes.Luck / 2);
-	            },
-	            'Science' : function(){
-	                return self.Attributes.Perception + (self.Attributes.Intelligence * 2) + (self.Attributes.Luck / 2);
-	            },
-	            'Craftsmanship' : function(){
-	                return (self.Attributes.Intelligence / 2) + (self.Attributes.Luck / 2) + (self.Attributes.Perception / 2) + (self.Attributes.Agility / 2);
-	            },
-	            'Stealth' : function(){
-	                return 2 + (self.Attributes.Agility * 2) + (self.Attributes.Luck / 2);
-	            },
-	            'Survival' : function(){
-	                return 2 + self.Attributes.Endurance + self.Attributes.Intelligence + (self.Attributes.Luck / 2);
-	            },
-	            'Gambling' : function(){
-	                return 2 + (self.Attributes.Perception * 2) + (self.Attributes.Luck / 2);
-	            },
-	            'Speech' : function(){
-	                return 2 + (self.Attributes.Charisma * 2) + (self.Attributes.Luck / 2);
-	            },
-	            'Athletics' : function(){
-	                return 2 + self.Attributes.Agility + self.Attributes.Strength + (self.Attributes.Endurance / 2);
-	            },
-	            'Piloting' : function(){
-	                return 2 * (self.Attributes.Agility + self.Attributes.Perception);
-	            },
-	            'History' : function(){
-	                return 2 + (self.Attributes.Intelligence * 2) + (self.Attributes.Perception / 2);
-	            }
-	        };
+		        var skillBase = {
+		        	'Firearms': function(){
+		                return self.Attributes.Agility + 10;
+		            },
+		            'Archery': function(){
+		                return 2 + (self.Attributes.Agility * 2) + (self.Attributes.Strength / 2);
+		            },
+		            'Explosives' : function(){
+		                return 2 + (self.Attributes.Perception * 2) + (self.Attributes.Luck / 2);
+		            },
+		            'Melee' : function(){
+		                return 30 + (2 * self.Attributes.Agility) + (2 * self.Attributes.Strength);
+		            },
+		            'Throwing' : function(){
+		                return 3 * self.Attributes.Agility + self.Attributes.Strength / 2;
+		            },
+		            'Lockpick' : function(){
+		                return 20 + (self.Attributes.Perception / 2) + (self.Attributes.Agility / 2);
+		            },
+		            'Mechanics' : function(){
+		                return 20 + self.Attributes.Intelligence;
+		            },
+		            'Medicine' : function(){
+		                return self.Attributes.Perception + (self.Attributes.Intelligence * 2) + (self.Attributes.Luck / 2);
+		            },
+		            'Science' : function(){
+		                return self.Attributes.Perception + (self.Attributes.Intelligence * 2) + (self.Attributes.Luck / 2);
+		            },
+		            'Craftsmanship' : function(){
+		                return (self.Attributes.Intelligence / 2) + (self.Attributes.Luck / 2) + (self.Attributes.Perception / 2) + (self.Attributes.Agility / 2);
+		            },
+		            'Stealth' : function(){
+		                return 2 + (self.Attributes.Agility * 2) + (self.Attributes.Luck / 2);
+		            },
+		            'Survival' : function(){
+		                return 2 + self.Attributes.Endurance + self.Attributes.Intelligence + (self.Attributes.Luck / 2);
+		            },
+		            'Gambling' : function(){
+		                return 2 + (self.Attributes.Perception * 2) + (self.Attributes.Luck / 2);
+		            },
+		            'Speech' : function(){
+		                return 2 + (self.Attributes.Charisma * 2) + (self.Attributes.Luck / 2);
+		            },
+		            'Athletics' : function(){
+		                return 2 + self.Attributes.Agility + self.Attributes.Strength + (self.Attributes.Endurance / 2);
+		            },
+		            'Piloting' : function(){
+		                return 2 * (self.Attributes.Agility + self.Attributes.Perception);
+		            },
+		            'History' : function(){
+		                return 2 + (self.Attributes.Intelligence * 2) + (self.Attributes.Perception / 2);
+		            }
+		        };
 
-	        for(var skillName in skillBase) {
-	        	Class.define(self.Skills, skillName, {
-		        	get : skillBase[skillName], enumerable: true
-		        });
-	        }
-
-
-
-	        /**
-	         * @member {object} Specializations - The extended skills container of the humanoid.  As skills are learned and go up in experience, these numbers will change.  See {@link Onto.Skill.Specializations.SpecializationCollection} for the default values.
-	         *
-	         * @see {@link Onto.Humanoid#Skill|Skill}
-	         * @see {@link Onto.Skill.Specializations.loadDefaults}
-	         * @instance
-	         * @memberof Onto.Humanoid
-	         */
-	        var Specializations = Onto.Skill.Specializations.loadDefaults();
-		    Class.define(self, "Specializations", Class(Specializations).Enumerable());
+		        for(var skillName in skillBase) {
+		        	Class.define(self.Skills, skillName, {
+			        	get : skillBase[skillName], enumerable: true
+			        });
+		        }
 
 
-		    // Body definition
+		        /**
+		         * @member {object} Specializations - The extended skills container of the humanoid.  As skills are learned and go up in experience, these numbers will change.  See {@link Onto.Skill.Specializations.SpecializationCollection} for the default values.
+		         *
+		         * @see {@link Onto.Humanoid#Skill|Skill}
+		         * @see {@link Onto.Skill.Specializations.loadDefaults}
+		         * @instance
+		         * @memberof Onto.Humanoid
+		         * @inheritparams Onto.Skill.Specializations.SpecializationCollection
+		         */
+		        var Specializations = Onto.Skill.Specializations.loadDefaults();
+			    Class.define(self, "Specializations", Class(Specializations).Enumerable());
+
+
+			    // Body definition
+
+			    /**
+			     * @member {object} HitLocations - The container for all of the body's hit locations.
+	             * @instance
+	             * @memberof Onto.Humanoid
+	             * @property {object} Head - The head.
+	             * @property {object} Head.DisplayName - "Head"
+	             * @property {object} Head.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 5)_
+	             * @property {object} Head.Percentage - The percentage of the whole body this location takes.<br />_5_
+	             * @property {object} Head.InventorySlots - The inventory slots available in this location.
+	             * @property {object} Head.InventorySlots.Hat - The crown and top of the head.
+	             * @property {object} Head.InventorySlots.EyeWear - The top half of the face.
+	             * @property {object} Head.InventorySlots.EarWear - The sides of the head.
+	             * @property {object} Head.InventorySlots.MouthWear - The bottom half of the face.
+	             * @property {object} Head.InventorySlots.NeckWear - The neck.
+	             * @property {Array} Head.Wounds - The wounds at this location.
+	             * @property {object} RightArm - The right arm
+	             * @property {object} RightArm.DisplayName - "Right Arm"
+	             * @property {object} RightArm.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 4)_
+	             * @property {object} RightArm.Percentage - The percentage of the whole body this location takes.<br />_10_
+	             * @property {object} RightArm.InventorySlots - The inventory slots available in this location.
+	             * @property {object} RightArm.InventorySlots.ShoulderWear - The shoulder and joint area.
+	             * @property {object} RightArm.InventorySlots.UpperMidWear - The top half of the arm.
+	             * @property {object} RightArm.InventorySlots.ElbowWear - The elbow.
+	             * @property {object} RightArm.InventorySlots.LowerMidWear - The bottom half of the arm.
+	             * @property {object} RightArm.InventorySlots.WristWear - The wrist.
+	             * @property {object} RightArm.InventorySlots.Gloves - The hands.
+	             * @property {Array} RightArm.Wounds - The wounds at this location.
+	             * @property {object} Chest
+	             * @property {object} Chest.DisplayName - "Chest"
+	             * @property {object} Chest.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 2)_
+	             * @property {object} Chest.Percentage - The percentage of the whole body this location takes.<br />_25_
+	             * @property {object} Chest.InventorySlots - The inventory slots available in this location.
+	             * @property {object} Chest.InventorySlots.CollarWear - The collar and below the neck to the top of the chest muscles.
+	             * @property {object} Chest.InventorySlots.LeftBreastWear - The left breast.
+	             * @property {object} Chest.InventorySlots.RightBreastWear - The right breast.
+	             * @property {object} Chest.InventorySlots.BackWear - The back of the chest.
+	             * @property {Array} Chest.Wounds - The wounds at this location.
+	             * @property {object} Abdomen
+	             * @property {object} Abdomen.DisplayName - "Abdomen"
+	             * @property {object} Abdomen.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 3)_
+	             * @property {object} Abdomen.Percentage - The percentage of the whole body this location takes.<br />_20_
+	             * @property {object} Abdomen.InventorySlots - The inventory slots available in this location.
+	             * @property {object} Abdomen.InventorySlots.PlexusWear - The solar plexus.
+	             * @property {object} Abdomen.InventorySlots.BellyWear - Above the waist.
+	             * @property {object} Abdomen.InventorySlots.Belt - The waist.
+	             * @property {object} Abdomen.InventorySlots.GroinWear - The groin area.
+	             * @property {Array} Abdomen.Wounds - The wounds at this location.
+	             * @property {object} LeftArm
+	             * @property {object} LeftArm.DisplayName - "Left Arm"
+	             * @property {object} LeftArm.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 4)_
+	             * @property {object} LeftArm.Percentage - The percentage of the whole body this location takes.<br />_10_
+	             * @property {object} LeftArm.InventorySlots - The inventory slots available in this location.
+	             * @property {object} LeftArm.InventorySlots.ShoulderWear - The shoulder and joint area.
+	             * @property {object} LeftArm.InventorySlots.UpperMidWear - The top half of the arm.
+	             * @property {object} LeftArm.InventorySlots.ElbowWear - The elbow.
+	             * @property {object} LeftArm.InventorySlots.LowerMidWear - The bottom half of the arm.
+	             * @property {object} LeftArm.InventorySlots.WristWear - The wrist.
+	             * @property {object} LeftArm.InventorySlots.Gloves - The hands.
+	             * @property {object} RightLeg
+	             * @property {object} RightLeg.DisplayName - "Right Leg"
+	             * @property {object} RightLeg.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 3)_
+	             * @property {object} RightLeg.Percentage - The percentage of the whole body this location takes.<br />_15_
+	             * @property {object} RightLeg.InventorySlots - The inventory slots available in this location.
+	             * @property {object} RightLeg.InventorySlots.HipWear - The hip and joint area.
+	             * @property {object} RightLeg.InventorySlots.UpperMidWear - The top half of the leg.
+	             * @property {object} RightLeg.InventorySlots.KneeWear - The knee.
+	             * @property {object} RightLeg.InventorySlots.LowerMidWear - The bottom half of the leg.
+	             * @property {object} RightLeg.InventorySlots.AnkleWear - The ankle.
+	             * @property {object} RightLeg.InventorySlots.Feet - The feet.
+	             * @property {object} LeftLeg
+	             * @property {object} LeftLeg.DisplayName - "Left Leg"
+	             * @property {object} LeftLeg.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 3)_
+	             * @property {object} LeftLeg.Percentage - The percentage of the whole body this location takes.<br />_15_
+	             * @property {object} LeftLeg.InventorySlots - The inventory slots available in this location.
+	             * @property {object} LeftLeg.InventorySlots.HipWear - The hip and joint area.
+	             * @property {object} LeftLeg.InventorySlots.UpperMidWear - The top half of the leg.
+	             * @property {object} LeftLeg.InventorySlots.KneeWear - The knee.
+	             * @property {object} LeftLeg.InventorySlots.LowerMidWear - The bottom half of the leg.
+	             * @property {object} LeftLeg.InventorySlots.AnkleWear - The ankle.
+	             * @property {object} LeftLeg.InventorySlots.Feet - The feet.
+			     */
+		        self.LoadBodyDefinition({
+	                Locations : {
+	                    "Head" : {
+	                    	"DisplayName" : "Head",
+				            "Health" : null,
+				            "Percentage" : 5,
+				            "InventorySlots" : {
+				                "Hat" : null,
+				                "EyeWear" : null,
+				                "EarWear" : null,
+				                "MouthWear" : null,
+				                "NeckWear" : null
+				            },
+				            "Wounds" : []
+				        },
+				        "RightArm" : {
+				        	"DisplayName" : "Right Arm",
+				            "Health" : null,
+				            "Percentage" : 10,
+				            "InventorySlots" : {
+				                "ShoulderWear" : null,
+				                "UpperMidWear" : null,
+				                "ElbowWear" : null,
+				                "LowerMidWear" : null,
+				                "WristWear" : null,
+				                "Gloves" : null
+				            },
+				            "Wounds" : []
+				        },
+				        "Chest" : {
+				        	"DisplayName" : "Chest",
+				            "Health" : null,
+				            "Percentage" : 25,
+				            "InventorySlots" : {
+				                "CollarWear" : null,
+				                "LeftBreastWear" : null,
+				                "RightBreastWear" : null,
+				                "BackWear" : null
+				            },
+				            "Wounds" : []
+				        },
+				        "LeftArm" : {
+				        	"DisplayName" : "Left Arm",
+				            "Health" : null,
+				            "Percentage" : 10,
+				            "InventorySlots" : {
+				                "ShoulderWear" : null,
+				                "UpperMidWear" : null,
+				                "ElbowWear" : null,
+				                "LowerMidWear" : null,
+				                "WristWear" : null,
+				                "Gloves" : null
+				            },
+				            "Wounds" : []
+				        },
+				        "Abdomen" : {
+				        	"DisplayName" : "Abdomen",
+				            "Health" : null,
+				            "Percentage" : 20,
+				            "InventorySlots" : {
+				                "PlexusWear" : null,
+				                "BellyWear" : null,
+				                "Belt" : null,
+				                "GroinWear" : null
+				            },
+				            "Wounds" : []
+				        },
+				        "RightLeg" : {
+				        	"DisplayName" : "Right Leg",
+				            "Health" : null,
+				            "Percentage" : 15,
+				            "InventorySlots" : {
+				                "HipWear" : null,
+				                "UpperMidWear" : null,
+				                "KneeWear" : null,
+				                "LowerMidWear" : null,
+				                "AnkleWear" : null,
+				                "Feet" : null
+				            },
+				            "Wounds" : []
+				        },
+				        "LeftLeg" : {
+				        	"DisplayName" : "Left Leg",
+				            "Health" : null,
+				            "Percentage" : 15,
+				            "InventorySlots" : {
+				                "HipWear" : null,
+				                "UpperMidWear" : null,
+				                "KneeWear" : null,
+				                "LowerMidWear" : null,
+				                "AnkleWear" : null,
+				                "Feet" : null
+				            },
+				            "Wounds" : []
+				        }
+	                }
+	            });
+
+				Class.define(self.HitLocations.Head, "Health", {
+					get: function() { return Math.round(self.HitPoints / 5); }
+				});
+
+				Class.define(self.HitLocations.RightArm, "Health", {
+					get: function() { return Math.round(self.HitPoints / 4); }
+				});
+
+				Class.define(self.HitLocations.Chest, "Health", {
+					get: function() { return Math.round(self.HitPoints / 2); }
+				});
+
+				Class.define(self.HitLocations.LeftArm, "Health", {
+					get: function() { return Math.round(self.HitPoints / 4); }
+				});
+
+				Class.define(self.HitLocations.Abdomen, "Health", {
+					get: function() { return Math.round(self.HitPoints / 3); }
+				});
+
+				Class.define(self.HitLocations.RightLeg, "Health", {
+					get: function() { return Math.round(self.HitPoints / 3); }
+				});
+
+				Class.define(self.HitLocations.LeftLeg, "Health", {
+					get: function() { return Math.round(self.HitPoints / 3); }
+				});
+
+		        // this.Inventory = Onto._.extend(this.Inventory || {}, data.Inventory);
+		    },
+
+		    Age : 0,
+		    Gender : '',
+		    Name : '',
+
+		    CurrentDamage : null,
+		    Damage : null,
+		    Size : null,
+		    HitPoints : null,
+
+		    MovementSpeed : null,
+		    AttackSpeed : null,
+
+		    MaxCarryWeight : null,
 
 		    /**
-		     * @member {object} HitLocations - The container for all of the body's hit locations.
-             * @instance
-             * @memberof Onto.Humanoid
-             * @property {object} Head - The head.
-             * @property {object} Head.DisplayName - "Head"
-             * @property {object} Head.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 5)_
-             * @property {object} Head.Percentage - The percentage of the whole body this location takes.<br />_5_
-             * @property {object} Head.InventorySlots - The inventory slots available in this location.
-             * @property {object} Head.InventorySlots.Hat - The crown and top of the head.
-             * @property {object} Head.InventorySlots.EyeWear - The top half of the face.
-             * @property {object} Head.InventorySlots.EarWear - The sides of the head.
-             * @property {object} Head.InventorySlots.MouthWear - The bottom half of the face.
-             * @property {object} Head.InventorySlots.NeckWear - The neck.
-             * @property {Array} Head.Wounds - The wounds at this location.
-             * @property {object} RightArm - The right arm
-             * @property {object} RightArm.DisplayName - "Right Arm"
-             * @property {object} RightArm.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 4)_
-             * @property {object} RightArm.Percentage - The percentage of the whole body this location takes.<br />_10_
-             * @property {object} RightArm.InventorySlots - The inventory slots available in this location.
-             * @property {object} RightArm.InventorySlots.ShoulderWear - The shoulder and joint area.
-             * @property {object} RightArm.InventorySlots.UpperMidWear - The top half of the arm.
-             * @property {object} RightArm.InventorySlots.ElbowWear - The elbow.
-             * @property {object} RightArm.InventorySlots.LowerMidWear - The bottom half of the arm.
-             * @property {object} RightArm.InventorySlots.WristWear - The wrist.
-             * @property {object} RightArm.InventorySlots.Gloves - The hands.
-             * @property {Array} RightArm.Wounds - The wounds at this location.
-             * @property {object} Chest
-             * @property {object} Chest.DisplayName - "Chest"
-             * @property {object} Chest.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 2)_
-             * @property {object} Chest.Percentage - The percentage of the whole body this location takes.<br />_25_
-             * @property {object} Chest.InventorySlots - The inventory slots available in this location.
-             * @property {object} Chest.InventorySlots.CollarWear - The collar and below the neck to the top of the chest muscles.
-             * @property {object} Chest.InventorySlots.LeftBreastWear - The left breast.
-             * @property {object} Chest.InventorySlots.RightBreastWear - The right breast.
-             * @property {object} Chest.InventorySlots.BackWear - The back of the chest.
-             * @property {Array} Chest.Wounds - The wounds at this location.
-             * @property {object} Abdomen
-             * @property {object} Abdomen.DisplayName - "Abdomen"
-             * @property {object} Abdomen.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 3)_
-             * @property {object} Abdomen.Percentage - The percentage of the whole body this location takes.<br />_20_
-             * @property {object} Abdomen.InventorySlots - The inventory slots available in this location.
-             * @property {object} Abdomen.InventorySlots.PlexusWear - The solar plexus.
-             * @property {object} Abdomen.InventorySlots.BellyWear - Above the waist.
-             * @property {object} Abdomen.InventorySlots.Belt - The waist.
-             * @property {object} Abdomen.InventorySlots.GroinWear - The groin area.
-             * @property {Array} Abdomen.Wounds - The wounds at this location.
-             * @property {object} LeftArm
-             * @property {object} LeftArm.DisplayName - "Left Arm"
-             * @property {object} LeftArm.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 4)_
-             * @property {object} LeftArm.Percentage - The percentage of the whole body this location takes.<br />_10_
-             * @property {object} LeftArm.InventorySlots - The inventory slots available in this location.
-             * @property {object} LeftArm.InventorySlots.ShoulderWear - The shoulder and joint area.
-             * @property {object} LeftArm.InventorySlots.UpperMidWear - The top half of the arm.
-             * @property {object} LeftArm.InventorySlots.ElbowWear - The elbow.
-             * @property {object} LeftArm.InventorySlots.LowerMidWear - The bottom half of the arm.
-             * @property {object} LeftArm.InventorySlots.WristWear - The wrist.
-             * @property {object} LeftArm.InventorySlots.Gloves - The hands.
-             * @property {object} RightLeg
-             * @property {object} RightLeg.DisplayName - "Right Leg"
-             * @property {object} RightLeg.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 3)_
-             * @property {object} RightLeg.Percentage - The percentage of the whole body this location takes.<br />_15_
-             * @property {object} RightLeg.InventorySlots - The inventory slots available in this location.
-             * @property {object} RightLeg.InventorySlots.HipWear - The hip and joint area.
-             * @property {object} RightLeg.InventorySlots.UpperMidWear - The top half of the leg.
-             * @property {object} RightLeg.InventorySlots.KneeWear - The knee.
-             * @property {object} RightLeg.InventorySlots.LowerMidWear - The bottom half of the leg.
-             * @property {object} RightLeg.InventorySlots.AnkleWear - The ankle.
-             * @property {object} RightLeg.InventorySlots.Feet - The feet.
-             * @property {object} LeftLeg
-             * @property {object} LeftLeg.DisplayName - "Left Leg"
-             * @property {object} LeftLeg.Health - The number of hitpoints at this location.<br />Calculated as: _Math.round(HitPoints / 3)_
-             * @property {object} LeftLeg.Percentage - The percentage of the whole body this location takes.<br />_15_
-             * @property {object} LeftLeg.InventorySlots - The inventory slots available in this location.
-             * @property {object} LeftLeg.InventorySlots.HipWear - The hip and joint area.
-             * @property {object} LeftLeg.InventorySlots.UpperMidWear - The top half of the leg.
-             * @property {object} LeftLeg.InventorySlots.KneeWear - The knee.
-             * @property {object} LeftLeg.InventorySlots.LowerMidWear - The bottom half of the leg.
-             * @property {object} LeftLeg.InventorySlots.AnkleWear - The ankle.
-             * @property {object} LeftLeg.InventorySlots.Feet - The feet.
-		     */
-		    /* istanbul ignore next */
-	        self.LoadBodyDefinition({
-                Locations : {
-                    "Head" : {
-                    	"DisplayName" : "Head",
-			            "Health" : null,
-			            "Percentage" : 5,
-			            "InventorySlots" : {
-			                "Hat" : null,
-			                "EyeWear" : null,
-			                "EarWear" : null,
-			                "MouthWear" : null,
-			                "NeckWear" : null
-			            },
-			            "Wounds" : []
-			        },
-			        "RightArm" : {
-			        	"DisplayName" : "Right Arm",
-			            "Health" : null,
-			            "Percentage" : 10,
-			            "InventorySlots" : {
-			                "ShoulderWear" : null,
-			                "UpperMidWear" : null,
-			                "ElbowWear" : null,
-			                "LowerMidWear" : null,
-			                "WristWear" : null,
-			                "Gloves" : null
-			            },
-			            "Wounds" : []
-			        },
-			        "Chest" : {
-			        	"DisplayName" : "Chest",
-			            "Health" : null,
-			            "Percentage" : 25,
-			            "InventorySlots" : {
-			                "CollarWear" : null,
-			                "LeftBreastWear" : null,
-			                "RightBreastWear" : null,
-			                "BackWear" : null
-			            },
-			            "Wounds" : []
-			        },
-			        "LeftArm" : {
-			        	"DisplayName" : "Left Arm",
-			            "Health" : null,
-			            "Percentage" : 10,
-			            "InventorySlots" : {
-			                "ShoulderWear" : null,
-			                "UpperMidWear" : null,
-			                "ElbowWear" : null,
-			                "LowerMidWear" : null,
-			                "WristWear" : null,
-			                "Gloves" : null
-			            },
-			            "Wounds" : []
-			        },
-			        "Abdomen" : {
-			        	"DisplayName" : "Abdomen",
-			            "Health" : null,
-			            "Percentage" : 20,
-			            "InventorySlots" : {
-			                "PlexusWear" : null,
-			                "BellyWear" : null,
-			                "Belt" : null,
-			                "GroinWear" : null
-			            },
-			            "Wounds" : []
-			        },
-			        "RightLeg" : {
-			        	"DisplayName" : "Right Leg",
-			            "Health" : null,
-			            "Percentage" : 15,
-			            "InventorySlots" : {
-			                "HipWear" : null,
-			                "UpperMidWear" : null,
-			                "KneeWear" : null,
-			                "LowerMidWear" : null,
-			                "AnkleWear" : null,
-			                "Feet" : null
-			            },
-			            "Wounds" : []
-			        },
-			        "LeftLeg" : {
-			        	"DisplayName" : "Left Leg",
-			            "Health" : null,
-			            "Percentage" : 15,
-			            "InventorySlots" : {
-			                "HipWear" : null,
-			                "UpperMidWear" : null,
-			                "KneeWear" : null,
-			                "LowerMidWear" : null,
-			                "AnkleWear" : null,
-			                "Feet" : null
-			            },
-			            "Wounds" : []
-			        }
-                }
-            });
+		     * The getter for all {@link Onto.Humanoid#Skills|Skills} that exist on the humanoid instance, which calculates the base skill with the appropriate {@link Onto.Humanoid#Specializations|Specializations}.
+		     * @function Skill
+		     * @see {@link Onto.Humanoid#Skills|Skills}
+	         * @instance
+	         * @memberof Onto.Humanoid
+	         * @example
+	         * var skillValue = humanInstance.Skill("Firearms.Pistol");
+	         */
+		    Skill : function(namepath) {
+		        var self = this;
+		        var split = namepath.split('.');
+		        var skillName = split[0];
+		        var baseSkill = self.Skills[skillName];
+		        var ret = 0;
+		        ret += baseSkill;      //Base
+		        if (split.length > 1) {
+		            var currPath = [skillName];
+		            for(var i = 1; i < split.length; ++i) {
+		                var breakLoop = false;
+		                var currSpec = self.Specializations[currPath.join(".")];
+		                if (!!currSpec) {
+		                	ret += currSpec.value;
+		                	currPath.push(split[i]);
+		                } else {
+		                    breakLoop = true;
+		                }
+		                if (breakLoop) {
+		                    break;
+		                }
+		            }
+		        }
+		        return ret;
+		    },
+		    Skills : {},
+		    Specializations: {}
+		});
 
-			/* istanbul ignore next */
-			Class.define(self.HitLocations.Head, "Health", {
-				get: function() { return Math.round(self.HitPoints / 5); }
-			});
+		Onto.addClass("Humanoid", Humanoid);
 
-			/* istanbul ignore next */
-			Class.define(self.HitLocations.RightArm, "Health", {
-				get: function() { return Math.round(self.HitPoints / 4); }
-			});
-
-			/* istanbul ignore next */
-			Class.define(self.HitLocations.Chest, "Health", {
-				get: function() { return Math.round(self.HitPoints / 2); }
-			});
-
-			/* istanbul ignore next */
-			Class.define(self.HitLocations.LeftArm, "Health", {
-				get: function() { return Math.round(self.HitPoints / 4); }
-			});
-
-			/* istanbul ignore next */
-			Class.define(self.HitLocations.Abdomen, "Health", {
-				get: function() { return Math.round(self.HitPoints / 3); }
-			});
-
-			/* istanbul ignore next */
-			Class.define(self.HitLocations.RightLeg, "Health", {
-				get: function() { return Math.round(self.HitPoints / 3); }
-			});
-
-			/* istanbul ignore next */
-			Class.define(self.HitLocations.LeftLeg, "Health", {
-				get: function() { return Math.round(self.HitPoints / 3); }
-			});
-
-	        // this.Inventory = Onto._.extend(this.Inventory || {}, data.Inventory);
-	    },
-
-	    Age : 0,
-	    Gender : '',
-	    Name : '',
-
-	    CurrentDamage : null,
-	    Damage : null,
-	    Size : null,
-	    HitPoints : null,
-
-	    MovementSpeed : null,
-	    AttackSpeed : null,
-
-	    MaxCarryWeight : null,
-
-	    /**
-	     * The getter for all {@link Onto.Humanoid#Skills|Skills} that exist on the humanoid instance, which calculates the base skill with the appropriate {@link Onto.Humanoid#Specializations|Specializations}.
-	     * @function Skill
-	     * @see {@link Onto.Humanoid#Skills|Skills}
-         * @instance
-         * @memberof Onto.Humanoid
-         * @example
-         * var skillValue = humanInstance.Skill("Firearms.Pistol");
-         */
-	    Skill : function(namepath) {
-	        var self = this;
-	        var split = namepath.split('.');
-	        var skillName = split[0];
-	        var baseSkill = self.Skills[skillName];
-	        var ret = 0;
-	        ret += baseSkill;      //Base
-	        if (split.length > 1) {
-	            var currPath = [skillName];
-	            for(var i = 1; i < split.length; ++i) {
-	                var breakLoop = false;
-	                var currSpec = self.Specializations[currPath.join(".")];
-	                if (!!currSpec) {
-	                	ret += currSpec.value;
-	                	currPath.push(split[i]);
-	                } else {
-	                    breakLoop = true;
-	                }
-	                if (breakLoop) {
-	                    break;
-	                }
-	            }
-	        }
-	        return ret;
-	    },
-	    Skills : {},
-	    Specializations: {}
-	});
-
-
-	Onto.addClass("Humanoid", Humanoid);
+	})();
 
 	//===========================================================
+	(function() {
 
-	var Difficulty = {
-	    Easy: {
-	        MaxAttributePoints: 100,
-	        StartingSkillPoints: 200
-	    },
-	    Normal: {
-	        MaxAttributePoints: 90,
-	        StartingSkillPoints: 150
-	    },
-	    Hard: {
-	        MaxAttributePoints: 80,
-	        StartingSkillPoints: 100
-	    }
-	};
+		var Difficulty = {
+		    Easy: {
+		        MaxAttributePoints: 100,
+		        StartingSkillPoints: 200
+		    },
+		    Normal: {
+		        MaxAttributePoints: 90,
+		        StartingSkillPoints: 150
+		    },
+		    Hard: {
+		        MaxAttributePoints: 80,
+		        StartingSkillPoints: 100
+		    }
+		};
 
+	})();
 	//===========================================================
 
 	var CharacterManager = new Class({
@@ -2419,6 +2605,86 @@ var Specializations = {
 	};
 
 	Onto.addClass("GameSession", GameSession);
+
+    //===========================================================
+
+    /**
+     * @namespace  Onto.Races
+     */
+    Onto.addNamespace(new Namespace("Races"));
+
+
+    //===========================================================
+    (function(){
+
+        /**
+         * Human Race Class constructor
+         * @class  Onto.Races.Human
+         * @classdesc Represents the human species in the Onto game system
+         * @param {object} data - The data that is going to be bound to this instance of Human
+         * @return {Onto.Races.Human}
+         * @extends {Onto.Humanoid}
+         * @inheritdoc Onto.Humanoid
+         */
+        var Human = new Class({
+            inherits: Onto.Humanoid,
+            init: function constructor(data) {
+                var self = this;
+                data = data || {};
+                data.Attributes = Onto._.extend(self.Attributes || {}, data.Attributes || {
+                    Strength        : 9, // Onto.Dice.roll(3, 6).value,
+                    Perception      : 9, // Onto.Dice.roll(3, 6).value,
+                    Endurance       : 9, // Onto.Dice.roll(3, 6).value,
+                    Charisma        : 9, // Onto.Dice.roll(3, 6).value,
+                    Intelligence    : 9, // Onto.Dice.roll(3, 6).value,
+                    Agility         : 9, // Onto.Dice.roll(3, 6).value,
+                    Luck            : 9, // Onto.Dice.roll(3, 6).value
+                });
+                constructor.super.call(self, data);
+            }
+        });
+
+        Onto.Races.addClass("Human", Human);
+
+    })();
+
+
+    //===========================================================
+    (function(){
+
+        /**
+         * Game Class constructor
+         * @class Onto.Game
+         * @classdesc Represents the game class in the Onto game system
+         * @param {object} data - The data that is going to be bound to this instance of Game
+         * @extends Onto.Base
+         * @inheritdoc Onto.Base
+         * @return {Onto.Game}
+         */
+        var Game = new Class({
+            inherits: Onto.Base,
+            init: function constructor(data) {
+                var self = this;
+                data = data || {};
+
+                constructor.super.call(self, data);
+                data = this.parse(data);
+                // console.log(data);
+                Onto._.extend(self, data);
+
+                //TODO:: populate game data on this instance
+            },
+            toJSON: Class(function toJSON() {
+                var ret = toJSON.super.call(this);
+                ret = Onto._.extend(ret, this);
+                return ret;
+            })
+        });
+
+        Onto.addClass("Game", Game);
+
+    })();
+
 
 	return Onto;
 

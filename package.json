@@ -35,6 +35,7 @@
     "grunt-mocha": "^0.4.11",
     "grunt-mocha-test": "^0.12.4",
     "grunt-template-jasmine-istanbul": "^0.3.0",
+    "grunt-template-jasmine-requirejs": "^0.2.0",
     "jsdoc": "git://github.com/jsdoc3/jsdoc",
     "jsdoc-bootstrap-template": "git://github.com/storjarn/jsdoc-bootstrap-template",
     "jsdoc-plugins": "git://github.com/storjarn/jsdoc-plugins",

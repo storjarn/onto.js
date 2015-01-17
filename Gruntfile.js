@@ -3,7 +3,10 @@ module.exports = function(grunt) {
     var libPaths = [
         'lib/onto.js',
         'lib/dice.js',
+        'lib/base.js',
+        'lib/body.js',
         'lib/item.js',
+        'lib/containeritem.js',
         'lib/inventory.js',
         'lib/armor.js',
         'lib/damage.js',
@@ -13,11 +16,13 @@ module.exports = function(grunt) {
         'lib/specializations.js',
         'lib/soul.js',
         'lib/spirit.js',
-        'lib/body.js',
         'lib/being.js',
         'lib/humanoid.js',
         'lib/difficulty.js',
-        'lib/characterManager.js'
+        'lib/characterManager.js',
+        'lib/races.js',
+        'lib/races.human.js',
+        'lib/game.js'
     ];
 
     var concatPaths = ['lib/intro.js'].concat(libPaths).concat(['lib/outro.js']);
@@ -36,7 +41,8 @@ module.exports = function(grunt) {
         paths: {
             vendor: [
                 'dist/Class.min.js', 'dist/Namespace.min.js',
-                'dist/EventEmitter.min.js', 'dist/ReferenceObject.min.js',
+                'dist/EventEmitter.min.js', 'dist/ReferenceObject.min.js', ,
+                'dist/Collection.min.js',
                 'dist/underscore.js'
             ],
             lib: libPaths,
@@ -86,7 +92,7 @@ module.exports = function(grunt) {
             }
         },
         jasmine: { //Browser tests
-            test: {
+            coverage: {
                 src: '<%= paths.testLib %>',
                 options: {
                     specs: 'test/index.js',
@@ -121,7 +127,18 @@ module.exports = function(grunt) {
                         }
                     }
                 }
+            },
+            require: {
+                src: '<%= paths.testLib %>',
+                options: {
+                    specs: 'test/index.js',
+                    template: require('grunt-template-jasmine-requirejs'),
+                    templateOptions: {
+                        requireConfigFile: ['test/requirejs-config.js']
+                    }
+                }
             }
+
         },
         // requireBower: { //Update requirejs with bower components
         //     target: {
@@ -196,7 +213,7 @@ module.exports = function(grunt) {
             // to false.
             grunt: false,
             // An array of arguments to pass to the command.
-            args: [ 'run', 'docs'],
+            args: ['run', 'docs'],
             // Additional options for the Node.js child_process spawn method.
             opts: {},
             // If this value is set and an error occurs, it will be used as the value

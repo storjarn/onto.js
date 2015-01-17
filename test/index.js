@@ -33,12 +33,14 @@
                 assert.ok(Onto.EventEmitter);
                 assert.ok(Onto.Namespace);
                 assert.ok(Onto.ReferenceObject);
+                assert.ok(Onto.Collection);
                 assert.ok(Onto._);
             } else {
                 expect(Onto.Class).toBeTruthy();
                 expect(Onto.EventEmitter).toBeTruthy();
                 expect(Onto.Namespace).toBeTruthy();
                 expect(Onto.ReferenceObject).toBeTruthy();
+                expect(Onto.Collection).toBeTruthy();
                 expect(Onto._).toBeTruthy();
             }
         });
@@ -330,6 +332,26 @@
         });
     });
 
+describe('[Onto.Base] A Base', function() {
+        var instance;
+
+        it('should throw an error about instantiating an abstract class when instantiating with the new keyword', function(){
+
+            if (assert) {
+                assert.throws(
+                  function() {
+                    instance = new Onto.Base();
+                  },
+                  /instantiate abstract class/
+                );
+            } else {
+                expect(function() {
+                    instance = new Onto.Base();
+                }).toThrow(new Error("Can't instantiate abstract class!"));
+            }
+        });
+    });
+
     describe('[Onto.Soul] A Soul', function() {
         var instance;
 
@@ -410,52 +432,53 @@
         });
     });
 
-    // describe('[Onto.Being] A Being', function() {
-    //     var instance;
-    //     var skills = {"Firearms":19,"Archery":27.5,"Explosives":24.5,"Melee":78,"Throwing":34.5,"Lockpick":29,"Mechanics":29,"Medicine":31.5,"Science":31.5,"Craftsmanship":18,"Stealth":24.5,"Survival":24.5,"Gambling":24.5,"Speech":24.5,"Athletics":30.5,"Piloting":36,"History":24.5};
+    describe('[Onto.Being] A Being', function() {
+        var instance;
 
-    //     beforeEach(function(){
-    //         instance = new Onto.Being({
-    //             Name: "Dude Man",
-    //             Age: 10,
-    //             Attributes: {
-    //                 Strength: 15
-    //             },
-    //             HitLocations : {
-    //                 Head : {
-    //                     Hat: {
-    //                         Armor: {
-    //                             Value: 5,
-    //                             Pierce: 1
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         });
-    //         // instance.HitLocations.Head.InventorySlots.Hat = instance.Inventory.Head.Hat;
-    //     });
+        it('should throw an error about instantiating an abstract class when instantiating with the new keyword', function(){
 
-    //     afterEach(function(){
-    //         instance = null;
-    //     });
-
-    //     it('should be able to create a simple character', function(){
-    //         if (assert) {
-    //             assert.ok(instance instanceof Onto.Being);
-    //             assert.ok(!(instance instanceof Date));
-    //         } else {
-    //             expect(instance instanceof Onto.Being).toBeTruthy();
-    //             expect(instance instanceof Date).toBeFalsy();
-    //         }
-    //     });
-    // });
+            if (assert) {
+                assert.throws(
+                  function() {
+                    instance = new Onto.Being({Attributes: {Strength: 15}});
+                  },
+                  /instantiate abstract class/
+                );
+            } else {
+                expect(function() {
+                    instance = new Onto.Being({Attributes: {Strength: 15}});
+                }).toThrow(new Error("Can't instantiate abstract class!"));
+            }
+        });
+    });
 
     describe('[Onto.Humanoid] A Humanoid', function() {
+        var instance;
+
+        it('should throw an error about instantiating an abstract class when instantiating with the new keyword', function(){
+
+            if (assert) {
+                assert.throws(
+                  function() {
+                    instance = new Onto.Humanoid({Attributes: {Strength: 15}});
+                  },
+                  /instantiate abstract class/
+                );
+            } else {
+                expect(function() {
+                    instance = new Onto.Humanoid({Attributes: {Strength: 15}});
+                }).toThrow(new Error("Can't instantiate abstract class!"));
+            }
+        });
+    });
+
+    describe('[Onto.Races.Human] A Human', function() {
         var instance;
         var skills = {"Firearms":19,"Archery":27.5,"Explosives":24.5,"Melee":78,"Throwing":34.5,"Lockpick":29,"Mechanics":29,"Medicine":31.5,"Science":31.5,"Craftsmanship":18,"Stealth":24.5,"Survival":24.5,"Gambling":24.5,"Speech":24.5,"Athletics":30.5,"Piloting":36,"History":24.5};
 
         beforeEach(function(){
-            instance = new Onto.Humanoid("Dude Man", {
+            instance = new Onto.Races.Human({
+                Name: "Dude Man",
                 Age: 10,
                 Attributes: {
                     Strength: 15
@@ -512,17 +535,66 @@
             }
         });
 
-        it('should have the Attribute Strength at 15, and Endurance and Agility at the default 9', function(){
-            if (assert) {
-                assert.equal(instance.Attributes.Endurance, 9);
-                assert.equal(instance.Attributes.Agility, 9);
-                assert.equal(instance.Attributes.Strength, 15);
-            } else {
-                expect(instance.Attributes.Endurance).toBe(9);
-                expect(instance.Attributes.Agility).toBe(9);
-                expect(instance.Attributes.Strength).toBe(15);
-            }
+        describe('Attributes', function(){
+
+            it('should have the Strength at 15', function(){
+                if (assert) {
+                    assert.equal(instance.Attributes.Strength, 15);
+                } else {
+                    expect(instance.Attributes.Strength).toBe(15);
+                }
+            });
+
+            it('should have the Endurance at 9', function(){
+                if (assert) {
+                    assert.equal(instance.Attributes.Endurance, 9);
+                } else {
+                    expect(instance.Attributes.Endurance).toBe(9);
+                }
+            });
+
+            it('should have the Agility at 9', function(){
+                if (assert) {
+                    assert.equal(instance.Attributes.Agility, 9);
+                } else {
+                    expect(instance.Attributes.Agility).toBe(9);
+                }
+            });
+
+            it('should have the Perception at 9', function(){
+                if (assert) {
+                    assert.equal(instance.Attributes.Perception, 9);
+                } else {
+                    expect(instance.Attributes.Perception).toBe(9);
+                }
+            });
+
+            it('should have the Charisma at 9', function(){
+                if (assert) {
+                    assert.equal(instance.Attributes.Charisma, 9);
+                } else {
+                    expect(instance.Attributes.Charisma).toBe(9);
+                }
+            });
+
+            it('should have the Intelligence at 9', function(){
+                if (assert) {
+                    assert.equal(instance.Attributes.Intelligence, 9);
+                } else {
+                    expect(instance.Attributes.Intelligence).toBe(9);
+                }
+            });
+
+            it('should have the Luck at 9', function(){
+                if (assert) {
+                    assert.equal(instance.Attributes.Luck, 9);
+                } else {
+                    expect(instance.Attributes.Luck).toBe(9);
+                }
+            });
+
         });
+
 
         it('should have a Size of 12 with a Strength of 15 and default on Endurance', function(){
             if (assert) {
@@ -636,10 +708,10 @@
         //     }
         // });
 
-        describe('should have the expected skills', function(){
+        describe('Skills', function(){
             for(var skillName in skills) {
                 /*jshint -W083 */
-                it('should have a '+skillName+' skill of of ' + skills[skillName], function(){
+                it('should have a '+skillName+' skill of ' + skills[skillName], function(){
                     if (assert) {
                         assert.equal(instance.Skill(skillName), skills[skillName]);
                     } else {
@@ -649,14 +721,31 @@
             }
         });
 
-        it('should show whatever I want', function(){
-            var skills = {};
-            for(var skillName in instance.Skills) {
-                skills[skillName] = instance.Skill(skillName);
+        it('should have the expected fully qualified name', function(){
+            if (assert) {
+                assert.equal(instance.toJSON().FullyQualifiedName, "Onto.Races.Human");
+            } else {
+                expect(instance.toJSON().FullyQualifiedName).toBe("Onto.Races.Human");
             }
+        });
+
+        it('should show whatever I want', function(){
+            // var skills = {};
+            // for(var skillName in instance.Skills) {
+            //     skills[skillName] = instance.Skill(skillName);
+            // }
             // console.log(JSON.stringify(skills));
 
             // console.log(JSON.stringify(instance));
+            // console.log(instance.toJSON());
+
+            var game = new Onto.Game({
+                Player: instance.toJSON()
+            });
+            var string = JSON.stringify(game, null, 4);
+            if (typeof define === 'undefined' && typeof require === 'function') {
+                require('fs').writeFileSync('./test/game-test.json', string);
+            }
 
             if (assert) {
                 assert.ok(true);

@@ -1,11 +1,12 @@
 require.config({
     paths: {
-        'requirejs': '../dist/require',
-        'underscore': '../dist/underscore',
-        'Class': '../dist/Class.min',
-        'EventEmitter': '../dist/EventEmitter.min',
-        'Namespace': '../dist/Namespace.min',
-        'ReferenceObject': '../dist/ReferenceObject.min'
+        'requirejs': './dist/require',
+        'underscore': './dist/underscore',
+        'Class': './dist/Class.min',
+        'EventEmitter': './dist/EventEmitter.min',
+        'Namespace': './dist/Namespace.min',
+        'ReferenceObject': './dist/ReferenceObject.min',
+        'Collection': './dist/Collection.min'
     },
     packages: [
 
@@ -17,7 +18,7 @@ require.config({
         'Onto': {
             exports: 'Onto',
             deps: [
-                'Class', 'Namespace', 'EventEmitter', 'ReferenceObject', 'underscore'
+                'Class', 'Namespace', 'EventEmitter', 'ReferenceObject', 'Collection', 'underscore'
             ]
         }
     }

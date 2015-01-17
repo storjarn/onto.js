@@ -1,0 +1,778 @@
+{
+    "FullyQualifiedName": "Onto.Game",
+    "UniqueID": "7ef8d5c9-726d-4db4-9cd2-034e8a1c4ecc",
+    "Player": {
+        "FullyQualifiedName": "Onto.Races.Human",
+        "UniqueID": "cd3b83c2-2cc3-4270-8146-61ae92a33cd0",
+        "Size": 12,
+        "HitPoints": 48,
+        "CurrentDamage": 0,
+        "HitLocations": {
+            "Head": {
+                "DisplayName": "Head",
+                "Health": 10,
+                "Percentage": 5,
+                "InventorySlots": {
+                    "Hat": null,
+                    "EyeWear": null,
+                    "EarWear": null,
+                    "MouthWear": null,
+                    "NeckWear": null
+                },
+                "Wounds": []
+            },
+            "RightArm": {
+                "DisplayName": "Right Arm",
+                "Health": 12,
+                "Percentage": 10,
+                "InventorySlots": {
+                    "ShoulderWear": null,
+                    "UpperMidWear": null,
+                    "ElbowWear": null,
+                    "LowerMidWear": null,
+                    "WristWear": null,
+                    "Gloves": null
+                },
+                "Wounds": []
+            },
+            "Chest": {
+                "DisplayName": "Chest",
+                "Health": 24,
+                "Percentage": 25,
+                "InventorySlots": {
+                    "CollarWear": null,
+                    "LeftBreastWear": null,
+                    "RightBreastWear": null,
+                    "BackWear": null
+                },
+                "Wounds": []
+            },
+            "LeftArm": {
+                "DisplayName": "Left Arm",
+                "Health": 12,
+                "Percentage": 10,
+                "InventorySlots": {
+                    "ShoulderWear": null,
+                    "UpperMidWear": null,
+                    "ElbowWear": null,
+                    "LowerMidWear": null,
+                    "WristWear": null,
+                    "Gloves": null
+                },
+                "Wounds": []
+            },
+            "Abdomen": {
+                "DisplayName": "Abdomen",
+                "Health": 16,
+                "Percentage": 20,
+                "InventorySlots": {
+                    "PlexusWear": null,
+                    "BellyWear": null,
+                    "Belt": null,
+                    "GroinWear": null
+                },
+                "Wounds": []
+            },
+            "RightLeg": {
+                "DisplayName": "Right Leg",
+                "Health": 16,
+                "Percentage": 15,
+                "InventorySlots": {
+                    "HipWear": null,
+                    "UpperMidWear": null,
+                    "KneeWear": null,
+                    "LowerMidWear": null,
+                    "AnkleWear": null,
+                    "Feet": null
+                },
+                "Wounds": []
+            },
+            "LeftLeg": {
+                "DisplayName": "Left Leg",
+                "Health": 16,
+                "Percentage": 15,
+                "InventorySlots": {
+                    "HipWear": null,
+                    "UpperMidWear": null,
+                    "KneeWear": null,
+                    "LowerMidWear": null,
+                    "AnkleWear": null,
+                    "Feet": null
+                },
+                "Wounds": []
+            }
+        },
+        "Attributes": {
+            "Perception": 9,
+            "Luck": 9,
+            "Charisma": 9,
+            "Intelligence": 9,
+            "Strength": 15,
+            "Endurance": 9,
+            "Agility": 9
+        },
+        "Chi": 18,
+        "Power": 18,
+        "Age": 10,
+        "Gender": "Male",
+        "Name": "Dude Man",
+        "MovementSpeed": 10,
+        "AttackSpeed": 11,
+        "MaxCarryWeight": 180,
+        "Inventory": {
+            "Head": {
+                "Hat": null,
+                "EyeWear": null,
+                "EarWear": null,
+                "MouthWear": null,
+                "NeckWear": null
+            },
+            "RightArm": {
+                "ShoulderWear": null,
+                "UpperMidWear": null,
+                "ElbowWear": null,
+                "LowerMidWear": null,
+                "WristWear": null,
+                "Gloves": null
+            },
+            "Chest": {
+                "CollarWear": null,
+                "LeftBreastWear": null,
+                "RightBreastWear": null,
+                "BackWear": null
+            },
+            "LeftArm": {
+                "ShoulderWear": null,
+                "UpperMidWear": null,
+                "ElbowWear": null,
+                "LowerMidWear": null,
+                "WristWear": null,
+                "Gloves": null
+            },
+            "Abdomen": {
+                "PlexusWear": null,
+                "BellyWear": null,
+                "Belt": null,
+                "GroinWear": null
+            },
+            "RightLeg": {
+                "HipWear": null,
+                "UpperMidWear": null,
+                "KneeWear": null,
+                "LowerMidWear": null,
+                "AnkleWear": null,
+                "Feet": null
+            },
+            "LeftLeg": {
+                "HipWear": null,
+                "UpperMidWear": null,
+                "KneeWear": null,
+                "LowerMidWear": null,
+                "AnkleWear": null,
+                "Feet": null
+            }
+        },
+        "Skills": {
+            "Firearms": 19,
+            "Archery": 27.5,
+            "Explosives": 24.5,
+            "Melee": 78,
+            "Throwing": 34.5,
+            "Lockpick": 29,
+            "Mechanics": 29,
+            "Medicine": 31.5,
+            "Science": 31.5,
+            "Craftsmanship": 18,
+            "Stealth": 24.5,
+            "Survival": 24.5,
+            "Gambling": 24.5,
+            "Speech": 24.5,
+            "Athletics": 30.5,
+            "Piloting": 36,
+            "History": 24.5
+        },
+        "Specializations": {
+            "Firearms": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Firearms",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of using all firearm weapons"
+            },
+            "Firearms.Pistol": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Firearms.Pistol",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of using all pistols"
+            },
+            "Firearms.Pistol.Pipe": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Firearms.Pistol.Pipe",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of using all makeshift pistols"
+            },
+            "Firearms.SMG": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Firearms.SMG",
+                "value": -15,
+                "useCount": 0,
+                "description": "The general skill of using all submachine guns"
+            },
+            "Firearms.Rifle": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Firearms.Rifle",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of using all rifles"
+            },
+            "Firearms.MG": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Firearms.MG",
+                "value": -15,
+                "useCount": 0,
+                "description": "The general skill of using all large mounted machine guns"
+            },
+            "Archery": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Archery",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of using all tension-propelled weapons for archery"
+            },
+            "Archery.Bow": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Archery.Bow",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of using all bow weapons for archery"
+            },
+            "Archery.Crossbow": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Archery.Crossbow",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of using all crossbow weapons for archery"
+            },
+            "Explosives": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Explosives",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of using all explosives"
+            },
+            "Melee": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Melee",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of using all hand-to-hand weapons, including brass knuckles, legs, fists, heads, etc."
+            },
+            "Melee.Shield": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Melee.Shield",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of using handheld shields as weapons"
+            },
+            "Melee.Spear": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Melee.Spear",
+                "value": -15,
+                "useCount": 0,
+                "description": "The general skill of using spears in hand-to-hand combat"
+            },
+            "Melee.Knife": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Melee.Knife",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of using knives in hand-to-hand combat"
+            },
+            "Melee.Sword": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Melee.Sword",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of using swords in hand-to-hand combat"
+            },
+            "Melee.Axe": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Melee.Axe",
+                "value": -15,
+                "useCount": 0,
+                "description": "The general skill of using axes in hand-to-hand combat"
+            },
+            "Melee.Hammer": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Melee.Hammer",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of using hammers in hand-to-hand combat"
+            },
+            "Melee.KungFu": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Melee.KungFu",
+                "value": -35,
+                "useCount": 0,
+                "description": "The general skill of successfully using techniques in the discipline of kung fu"
+            },
+            "Throwing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Throwing",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of throwing things"
+            },
+            "Throwing.Spear": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Throwing.Spear",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of throwing spears"
+            },
+            "Throwing.Knife": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Throwing.Knife",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of throwing knives"
+            },
+            "Throwing.Axe": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Throwing.Axe",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of throwing axes"
+            },
+            "Lockpick": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Lockpick",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of using tools to open locks without a key"
+            },
+            "Mechanics": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Mechanics",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of using and repairing machinery or working parts of something"
+            },
+            "Mechanics.Combustion": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Mechanics.Combustion",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of using and repairing machinery and tools that use fuel combustion power"
+            },
+            "Mechanics.Combustion.Coal": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Mechanics.Combustion.Coal",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of using and repairing machinery and tools that use coal for fuel combustion power"
+            },
+            "Mechanics.Combustion.Hydrocarbon": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Mechanics.Combustion.Hydrocarbon",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of using and repairing machinery and tools that use gasoline or diesel for fuel combustion power"
+            },
+            "Mechanics.Hydraulic": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Mechanics.Hydraulic",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of using and repairing machinery and tools that use liquid fluid power to do simple work"
+            },
+            "Medicine": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Medicine",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of help given to a sick or injured person"
+            },
+            "Medicine.FirstAid": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Medicine.FirstAid",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of help given to a sick or injured person until full medical treatment is available"
+            },
+            "Science": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Science",
+                "value": 0,
+                "useCount": 0,
+                "description": "the intellectual and practical activity encompassing the systematic study of the structure and behavior of the physical and natural world through observation and experiment"
+            },
+            "Science.Botany": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Science.Botany",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of working with plants"
+            },
+            "Science.Mineral": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Science.Mineral",
+                "value": -15,
+                "useCount": 0,
+                "description": "The general skill of working with minerals"
+            },
+            "Science.Electronic": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Science.Electronic",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of working with electronic devices"
+            },
+            "Science.Computer": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Science.Computer",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of working with computers"
+            },
+            "Science.Computer.Programming": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Science.Computer.Programming",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of working with computer software"
+            },
+            "Science.Physics": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Science.Physics",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of working with energy and matter using the scientific method"
+            },
+            "Science.Physics.Optical": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Science.Physics.Optical",
+                "value": -25,
+                "useCount": 0,
+                "description": "The general skill of working with light"
+            },
+            "Science.Physics.Particle": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Science.Physics.Particle",
+                "value": -35,
+                "useCount": 0,
+                "description": "The general skill of working with particles"
+            },
+            "Science.Physics.Astro": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Science.Physics.Astro",
+                "value": -50,
+                "useCount": 0,
+                "description": "The general skill of planetary bodies"
+            },
+            "Science.Rocket": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Science.Rocket",
+                "value": -50,
+                "useCount": 0,
+                "description": "The general skill of building rockets"
+            },
+            "Craftsmanship": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of making things"
+            },
+            "Craftsmanship.Shipbuilding": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Shipbuilding",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of making boats"
+            },
+            "Craftsmanship.Leathersmithing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Leathersmithing",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of making things from leather"
+            },
+            "Craftsmanship.Gemsmithing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Gemsmithing",
+                "value": -25,
+                "useCount": 0,
+                "description": "The general skill of making things from gems"
+            },
+            "Craftsmanship.Metalsmithing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Metalsmithing",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of making things from metals"
+            },
+            "Craftsmanship.Metalsmithing.Blacksmithing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Metalsmithing.Blacksmithing",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of making things from iron and steel"
+            },
+            "Craftsmanship.Metalsmithing.Goldsmithing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Metalsmithing.Goldsmithing",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of making things from gold"
+            },
+            "Craftsmanship.Metalsmithing.Silversmithing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Metalsmithing.Silversmithing",
+                "value": -15,
+                "useCount": 0,
+                "description": "The general skill of making things from silver"
+            },
+            "Craftsmanship.Furrier": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Furrier",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of making clothes from animal fur"
+            },
+            "Craftsmanship.Dyeing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Dyeing",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of dyeing cloth different colors"
+            },
+            "Craftsmanship.Gunsmithing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Gunsmithing",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of making guns"
+            },
+            "Craftsmanship.Locksmithing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Locksmithing",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of making locks"
+            },
+            "Craftsmanship.Pottersmithing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Pottersmithing",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of making things from clay"
+            },
+            "Craftsmanship.Stonemasonry": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Stonemasonry",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of making things from stone"
+            },
+            "Craftsmanship.Weaving": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Weaving",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of making things from thread"
+            },
+            "Craftsmanship.Weaving.Ropesmithing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Weaving.Ropesmithing",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of making rope"
+            },
+            "Craftsmanship.Carpentry": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Carpentry",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of building things with wood"
+            },
+            "Craftsmanship.Carpentry.Coopersmithing": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Craftsmanship.Carpentry.Coopersmithing",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of making barrels"
+            },
+            "Stealth": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Stealth",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of being undetected"
+            },
+            "Stealth.Steal": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Stealth.Steal",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of taking things undetected"
+            },
+            "Stealth.Sneak": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Stealth.Sneak",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of sneaking around undetected"
+            },
+            "Survival": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Survival",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of surviving on outdoors"
+            },
+            "Survival.Forest": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Survival.Forest",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of surviving in forests"
+            },
+            "Survival.Desert": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Survival.Desert",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of surviving in deserts"
+            },
+            "Survival.Island": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Survival.Island",
+                "value": -30,
+                "useCount": 0,
+                "description": "The general skill of surviving on islands"
+            },
+            "Survival.Mountain": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Survival.Mountain",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of surviving on mountains"
+            },
+            "Gambling": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Gambling",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of gambling"
+            },
+            "Gambling.Cards": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Gambling.Cards",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of gambling with cards"
+            },
+            "Gambling.Roulette": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Gambling.Roulette",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of gambling with a roulette wheel"
+            },
+            "Speech": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Speech",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of moving others with speech"
+            },
+            "Speech.Persuasion": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Speech.Persuasion",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of persuading others"
+            },
+            "Speech.Barter": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Speech.Barter",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of negotiating a better price"
+            },
+            "Piloting": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Piloting",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of piloting powered vehicles"
+            },
+            "Piloting.Boat": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Piloting.Boat",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of piloting water vessels"
+            },
+            "Piloting.Aircraft": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Piloting.Aircraft",
+                "value": -30,
+                "useCount": 0,
+                "description": "The general skill of flying aircraft"
+            },
+            "Piloting.Automobile": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Piloting.Automobile",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of driving cars"
+            },
+            "Athletics": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Athletics",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of being physically fit"
+            },
+            "Athletics.Jump": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Athletics.Jump",
+                "value": -5,
+                "useCount": 0,
+                "description": "The general skill of jumping when it counts"
+            },
+            "Athletics.Climb": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Athletics.Climb",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of climbing things"
+            },
+            "Athletics.Ride": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Athletics.Ride",
+                "value": -10,
+                "useCount": 0,
+                "description": "The general skill of riding animals"
+            },
+            "Athletics.Swim": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "Athletics.Swim",
+                "value": -20,
+                "useCount": 0,
+                "description": "The general skill of swimming"
+            },
+            "History": {
+                "FullyQualifiedName": "Onto.Skill.Specialization",
+                "namePath": "History",
+                "value": 0,
+                "useCount": 0,
+                "description": "The general skill of knowing things"
+            }
+        }
+    }
+}
