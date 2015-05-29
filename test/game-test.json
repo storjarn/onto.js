@@ -1,9 +1,9 @@
 {
     "FullyQualifiedName": "Onto.Game",
-    "UniqueID": "7ef8d5c9-726d-4db4-9cd2-034e8a1c4ecc",
+    "UniqueID": "c4aa52d1-d358-4572-838d-7efc294bbd6b",
     "Player": {
         "FullyQualifiedName": "Onto.Races.Human",
-        "UniqueID": "cd3b83c2-2cc3-4270-8146-61ae92a33cd0",
+        "UniqueID": "e7dbafda-6546-4497-bba4-f6fc0cd80309",
         "Size": 12,
         "HitPoints": 48,
         "CurrentDamage": 0,

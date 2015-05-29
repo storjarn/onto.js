@@ -4,6 +4,7 @@
   "description": "A highly modular node.js-based RPG engine.",
   "main": "index.js",
   "scripts": {
+    "start": "node server.js",
     "test": "...",
     "docs": "rm -rf ./docs && ./node_modules/.bin/jsdoc -c ./conf.json"
   },
@@ -41,5 +42,8 @@
     "jsdoc-plugins": "git://github.com/storjarn/jsdoc-plugins",
     "mocha": "^2.0.1",
     "requirejs": "^2.1.15"
+  },
+  "devDependencies": {
+    "node-static": "~0.7.6"
   }
 }

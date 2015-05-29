@@ -1,0 +1,1204 @@
+<!doctype html>
+<html>
+<head>
+    <title>Onto.js Inline Test</title>
+    <script type="text/javascript" src="/bower/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="/bower/underscore/underscore-min.js"></script>
+    <script type="text/javascript" src="/bower/ee-class/dist/Class.min.js"></script>
+    <script type="text/javascript" src="/bower/ee-class/dist/EventEmitter.min.js"></script>
+    <script type="text/javascript" src="/bower/ee-class/dist/Namespace.min.js"></script>
+    <script type="text/javascript" src="/bower/ee-class/dist/ReferenceObject.min.js"></script>
+    <script type="text/javascript" src="/bower/ee-class/dist/Collection.min.js"></script>
+</head>
+<body>
+    <script>
+        var Onto = new Namespace("Onto");
+
+        (function() {
+            Onto.addClass('Class', Class);
+            Onto.addClass('EventEmitter', EventEmitter);
+            Onto.addClass('Namespace', Namespace);
+            Onto.addClass('ReferenceObject', ReferenceObject);
+            Onto.addClass('Collection', Collection);
+            var Utility = new Namespace('Utility', Onto, {
+                _: _,
+                guid : function() {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+                        return v.toString(16);
+                    });
+                },
+                localStorage: {
+                    get: function(key, klass) {
+                        var ret = window.localStorage.getItem(key);
+                        try {
+                            ret = JSON.parse(ret);
+                        } catch(ex) { console.warn("localStorage value at " + key + " is not valid JSON"); }
+                        if (!!klass) {
+                            ret = new klass(ret);
+                        }
+                        return ret;
+                    },
+                    set: function(key, data, replacer) {
+                        if (typeof data !== 'string') {
+                            data = JSON.stringify(data, replacer);
+                        }
+                        window.localStorage.setItem(key, data);
+                    }
+                }
+            });
+        })();
+    </script>
+
+    <script type="text/javascript" src="/lib/dice.js"></script>
+
+    <script>
+        (function(){
+            var Base = new Class({
+                isAbstract: true,
+                UniqueID: '',
+                inherits: Onto.EventEmitter,
+                init: function(data) {
+                    var self = this;
+                    data = data || {};
+                    self.UniqueID = data.UniqueID || Onto.Utility.guid();
+                }
+            });
+
+            Onto.addClass("Base", Base);
+
+            new Namespace('Difficulty', Onto, {});
+
+            Onto.Difficulty.addNamespace(new Namespace('Easy'));
+            Class.define(Onto.Difficulty.Easy, 'MaxAttributePoints', Class(100).Enumerable());
+            Class.define(Onto.Difficulty.Easy, 'StartingSkillPoints', Class(200).Enumerable());
+
+            Onto.Difficulty.addNamespace(new Namespace('Normal'));
+            Class.define(Onto.Difficulty.Normal, 'MaxAttributePoints', Class(90).Enumerable());
+            Class.define(Onto.Difficulty.Normal, 'StartingSkillPoints', Class(150).Enumerable());
+
+            Onto.Difficulty.addNamespace(new Namespace('Hard'));
+            Class.define(Onto.Difficulty.Hard, 'MaxAttributePoints', Class(80).Enumerable());
+            Class.define(Onto.Difficulty.Hard, 'StartingSkillPoints', Class(100).Enumerable());
+
+            var CharacterTemplate = new Class({
+                inherits: Onto.Base,
+                init: function constructor(data) {
+                    var self = this;
+                    data = data || {};
+                    constructor.super.call(self, data);
+
+                    self.on('changed', function(args){
+                        console.log(args);
+                    });
+
+                    Class.define(self, 'Name', Class(data.Name || 'Unknown Traveller').Enumerable().Writable());
+
+                    var attributes = {
+                        'Strength'  : data.Strength || Onto.Dice.roll(3, 6, 0).value,
+                        'Endurance' : data.Endurance || Onto.Dice.roll(3, 6, 0).value,
+                        'Agility'   : data.Agility || Onto.Dice.roll(3, 6, 0).value,
+
+                        'Charisma'  : data.Charisma || Onto.Dice.roll(3, 6, 0).value,
+                        'Intelligence': data.Intelligence || Onto.Dice.roll(3, 6, 0).value,
+
+                        'Willpower' : data.Willpower || Onto.Dice.roll(3, 6, 0).value
+                    };
+
+                    Class.define(self, 'Attributes', Class(attributes));
+
+                    var attributeConstraints = _.extend({
+                        MaxDistribution: Onto.Difficulty.Easy.MaxAttributePoints,
+                        Minimum: 3,
+                        Maximum: 18
+                    }, data.attributeConstraints || {});
+
+                    Class.define(self, 'AttributeConstraints', Class(attributeConstraints).Enumerable());
+
+                    _.forEach(attributes, function(value, attributeName, list) {
+                        Class.define(self, attributeName, {
+                            get: function() {
+                                return attributes[attributeName] || Onto.Dice.roll(3, 6, 0).value;
+                            },
+                            set: function(val) {
+                                var oldValue = attributes[attributeName];
+                                var diff = val - attributes[attributeName];
+                                var min = attributeConstraints.Minimum;
+                                var max = attributeConstraints.Maximum;
+                                var newValue = val;
+
+                                if ((self.AttributeTotal + diff) <= attributeConstraints.MaxDistribution) {
+                                    if (newValue >= min && newValue <= max) {
+                                        attributes[attributeName] += diff;
+                                        self.emit('changed', {
+                                            object: self,
+                                            oldValue: oldValue,
+                                            newValue: newValue,
+                                            name: attributeName
+                                        });
+
+                                        self.emit('changed:'+attributeName, {
+                                            object: self,
+                                            oldValue: oldValue,
+                                            newValue: newValue,
+                                            name: attributeName
+                                        });
+                                    }
+                                }
+                            },
+                            enumerable: true
+                        });
+                    });
+
+                    Class.define(self, 'AttributeTotal', {
+                        get: function() {
+                            var ret = 0;
+                            _.forEach(attributes, function(val) {
+                                ret += val;
+                            });
+                            return ret;
+                        }
+                    });
+
+                    Class.define(self, 'Size', {
+                        get: function() {
+                            return Math.round(this.Strength * 2 / 3 + this.Endurance / 2);
+                        },
+                        // enumerable: true
+                    });
+
+                    Class.define(self, 'Luck', {
+                        get: function() {
+                            var value = Math.round((this.Charisma + this.Intelligence + this.Willpower) / 3);
+                            var bottomValue = value - 9;
+                            var randomLuck = Onto.Dice.random(bottomValue, value, true);
+                            return randomLuck();
+                        },
+                        // enumerable: true
+                    });
+
+                    Class.define(self, 'SpiritSpent', {
+                        value: 0,
+                        enumerable: true,
+                        writable: true
+                    });
+
+                    Class.define(self, 'Spirit', {
+                        get: function() {
+                            return Math.max(1, Math.round((this.Willpower * 3 + this.Luck) / 4 - this.SpiritSpent));
+                        },
+                        // enumerable: true
+                    });
+
+                    Class.define(self, 'Perception', {
+                        get: function() {
+                            return Math.round((this.Willpower + this.Intelligence) / 2);
+                        },
+                        // enumerable: true
+                    });
+
+                    Class.define(self, 'HitPoints', {
+                        get: function(){
+                            return 15 + this.Strength + (this.Endurance * 2);
+                        },
+                        // enumerable: true
+                    });
+
+                    Class.define(self, 'MaxCarryWeight', {
+                        get: function(){
+                            return 12 * this.Strength;
+                        },
+                        // enumerable: true
+                    });
+
+                    Class.define(self, 'AttackSpeed', {
+                        get: function(){
+                            return Math.max(20 - this.Agility + this.CurrentDamage, 1);
+                        },
+                        // enumerable: true
+                    });
+
+                    Class.define(self, 'MovementSpeed', {
+                        get: function(){
+                            return Math.max(1 + this.Agility - this.CurrentDamage, 0);
+                        },
+                        // enumerable: true
+                    });
+
+                    Class.define(self, 'CurrentDamage', {
+                        get: function() {
+                            var dmg = 0;
+                            for (var loc in this.HitLocations) {
+                                for (var i = 0; i < this.HitLocations[loc].Wounds.length; ++i) {
+                                    dmg += this.HitLocations[loc].Wounds[i].Value;
+                                }
+                            }
+                            for (var effectName in this.Effects) {
+                                var effect = this.Effects[effectName];
+                                if (effect.Damage) {
+                                    dmg += effect.Damage;
+                                }
+                            }
+                            return dmg;
+                        },
+                        // enumerable: true
+                    });
+
+                    var _hitLocations = {
+                        "Head" : {
+                            "DisplayName" : "Head",
+                            "Health" : null,
+                            "Percentage" : 5,
+                            "InventorySlots" : {
+                                "Hat" : null,
+                                "EyeWear" : null,
+                                "EarWear" : null,
+                                "MouthWear" : null,
+                                "NeckWear" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "RightArm" : {
+                            "DisplayName" : "Right Arm",
+                            "Health" : null,
+                            "Percentage" : 10,
+                            "InventorySlots" : {
+                                "ShoulderWear" : null,
+                                "UpperMidWear" : null,
+                                "ElbowWear" : null,
+                                "LowerMidWear" : null,
+                                "WristWear" : null,
+                                "Gloves" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "Chest" : {
+                            "DisplayName" : "Chest",
+                            "Health" : null,
+                            "Percentage" : 25,
+                            "InventorySlots" : {
+                                "CollarWear" : null,
+                                "LeftBreastWear" : null,
+                                "RightBreastWear" : null,
+                                "BackWear" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "LeftArm" : {
+                            "DisplayName" : "Left Arm",
+                            "Health" : null,
+                            "Percentage" : 10,
+                            "InventorySlots" : {
+                                "ShoulderWear" : null,
+                                "UpperMidWear" : null,
+                                "ElbowWear" : null,
+                                "LowerMidWear" : null,
+                                "WristWear" : null,
+                                "Gloves" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "Abdomen" : {
+                            "DisplayName" : "Abdomen",
+                            "Health" : null,
+                            "Percentage" : 20,
+                            "InventorySlots" : {
+                                "PlexusWear" : null,
+                                "BellyWear" : null,
+                                "Belt" : null,
+                                "GroinWear" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "RightLeg" : {
+                            "DisplayName" : "Right Leg",
+                            "Health" : null,
+                            "Percentage" : 15,
+                            "InventorySlots" : {
+                                "HipWear" : null,
+                                "UpperMidWear" : null,
+                                "KneeWear" : null,
+                                "LowerMidWear" : null,
+                                "AnkleWear" : null,
+                                "Feet" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "LeftLeg" : {
+                            "DisplayName" : "Left Leg",
+                            "Health" : null,
+                            "Percentage" : 15,
+                            "InventorySlots" : {
+                                "HipWear" : null,
+                                "UpperMidWear" : null,
+                                "KneeWear" : null,
+                                "LowerMidWear" : null,
+                                "AnkleWear" : null,
+                                "Feet" : null
+                            },
+                            "Wounds" : []
+                        }
+                    };
+
+                    // alert("Ah");
+
+                    var totalLocationPercentage = 0;
+                    for(var loc in _hitLocations) {
+                        totalLocationPercentage += _hitLocations[loc].Percentage;
+                    }
+                    if (totalLocationPercentage !== 100) {
+                        console.error("Total Hit Location coverage is "+(totalLocationPercentage < 100 ? "less" : "greater")+" than 100%:", totalLocationPercentage);
+                    }
+
+                    Class.define(self, 'HitLocations', {
+                        get: function() { return _hitLocations; }
+                    });
+
+                    Class.define(self.HitLocations.Head, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 5); }
+                    });
+
+                    Class.define(self.HitLocations.RightArm, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 4); }
+                    });
+
+                    Class.define(self.HitLocations.Chest, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 2); }
+                    });
+
+                    Class.define(self.HitLocations.LeftArm, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 4); }
+                    });
+
+                    Class.define(self.HitLocations.Abdomen, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 3); }
+                    });
+
+                    Class.define(self.HitLocations.RightLeg, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 3); }
+                    });
+
+                    Class.define(self.HitLocations.LeftLeg, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 3); }
+                    });
+
+
+                    Class.define(self, 'Effects', Class({}).Enumerable());
+
+                    var skillConstraints = _.extend({
+                        MaxDistribution: Onto.Difficulty.Easy.StartingSkillPoints,
+                        Maximum: 100
+                    }, data.skillConstraints || {});
+
+                    Class.define(self, 'SkillConstraints', Class(skillConstraints).Enumerable());
+
+                    Class.define(self, 'Skills', Class({}).Enumerable());
+
+                    var skills = data.Skills || {};
+                    function skillGenerator(skillName, baseFn, luckFn) {
+                        var skillData = skills[skillName] || {};
+                        var _learned = skillData.learned || 0;
+                        var _uses = skillData.uses || 0;
+                        luckFn = luckFn || function() { return 0; };
+
+                        var skillObj = {};
+
+                        Class.define(skillObj, 'base', {
+                            get: baseFn,
+                            enumerable: true
+                        });
+
+                        Class.define(skillObj, 'learned', {
+                            get: function() {
+                                return _learned;
+                            },
+                            enumerable: true
+                        });
+
+                        Class.define(skillObj, 'uses', {
+                            get: function() {
+                                return _uses;
+                            },
+                            enumerable: true
+                        });
+
+                        Class.define(skillObj, 'value', {
+                            get: function() {
+                                return Math.round(baseFn() + luckFn()) + _learned;
+                            }
+                        });
+
+                        Class.define(skillObj, 'valueOf', {
+                            value: skillObj.value
+                        });
+
+                        Class.define(skillObj, 'toValue', {
+                            value: skillObj.valueOf
+                        });
+
+                        var retObj = {
+                            get: function() {
+                                return skillObj;
+                            },
+                            set: function(value) {
+                                var oldValue = _learned;
+                                var newValue = value - baseFn();
+                                if (oldValue !== newValue && newValue > -1) {
+                                    if (skillConstraints.MaxDistribution > 0) {
+                                        var diff = val - _learned;
+                                        var min = baseFn();
+                                        var max = skillConstraints.Maximum;
+                                        if (diff <= skillConstraints.MaxDistribution) {
+                                            newValue = _learned + diff;
+                                            if (newValue >= min && newValue <= max) {
+                                                _learned += diff;
+                                                skillConstraints.MaxDistribution -= diff;
+                                                self.emit('changed', {
+                                                    object: self,
+                                                    oldValue: oldValue,
+                                                    newValue: _learned,
+                                                    name: 'Skills.'+skillName+'.learned'
+                                                });
+                                            }
+                                        }
+                                    }
+                                    // _learned = newValue;
+                                }
+                            },
+                            enumerable: true
+                        };
+                        return retObj;
+                    }
+
+                    var skillBase = {
+                        'Firearms': skillGenerator('Firearms', function() {
+                            return self.Agility + 10;
+                        }, function() {
+                            return self.Luck / 3;
+                        }),
+                        'Archery': skillGenerator('Archery', function() {
+                            return Math.round(2 + self.Agility * 2 + self.Strength / 2);
+                        }, function() {
+                            return self.Luck / 3;
+                        }),
+                        'Explosives' : skillGenerator('Explosives', function() {
+                            return Math.round(2 + self.Perception * 2);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Melee' : skillGenerator('Melee', function() {
+                            return 30 + (2 * self.Agility) + (2 * self.Strength);
+                        }),
+                        'Throwing' : skillGenerator('Throwing', function() {
+                            return Math.round(3 * self.Agility + self.Strength / 2);
+                        }),
+                        'Lockpick' : skillGenerator('Lockpick', function() {
+                            return Math.round(20 + self.Perception / 2 + self.Agility / 2);
+                        }, function() {
+                            return self.Luck;
+                        }),
+                        'Mechanics' : skillGenerator('Mechanics', function() {
+                            return 20 + self.Intelligence;
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Medicine' : skillGenerator('Medicine', function() {
+                            return Math.round(self.Perception + (self.Intelligence * 2));
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Science' : skillGenerator('Science', function() {
+                            return self.Perception + (self.Intelligence * 3);
+                        }),
+                        'Craftsmanship' : skillGenerator('Craftsmanship', function() {
+                            return Math.round(self.Intelligence / 2 + self.Perception / 2 + self.Agility / 2);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Stealth' : skillGenerator('Stealth', function() {
+                            return Math.round(2 + self.Agility * 2);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Survival' : skillGenerator('Survival', function() {
+                            return Math.round(2 + self.Endurance + self.Intelligence);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Gambling' : skillGenerator('Gambling', function() {
+                            return Math.round(2 + self.Perception * 2);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Speech' : skillGenerator('Speech', function() {
+                            return Math.round(2 + self.Charisma * 2);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Athletics' : skillGenerator('Athletics', function() {
+                            return Math.round(2 + self.Agility + self.Strength + self.Endurance / 2);
+                        }),
+                        'Piloting' : skillGenerator('Piloting', function() {
+                            return 2 * (self.Agility + self.Perception);
+                        }),
+                        'History' : skillGenerator('History', function() {
+                            return Math.round(2 + self.Intelligence * 2 + self.Perception / 2);
+                        }),
+                    };
+
+                    var skillName;
+
+                    for(skillName in skillBase) {
+                        Class.define(self.Skills, skillName, skillBase[skillName]);
+                    }
+                }
+            });
+
+            Onto.addClass("CharacterTemplate", CharacterTemplate);
+
+            var CharacterManager = new Class({
+                inherits: Onto.Base,
+                init: function constructor(data) {
+                    var self = this;
+                    data = data || {};
+                    constructor.super.call(self, data);
+                }
+            });
+
+            var Character = new Class({
+                inherits: Onto.Base,
+                init: function constructor(data) {
+                    var self = this;
+                    data = data || {};
+                    constructor.super.call(self, data);
+
+                    self.on('changed', function(args){
+                        console.log(args);
+                    });
+
+                    var character = new CharacterTemplate(data);
+
+                    Class.define(self, 'Name', Object.getOwnPropertyDescriptor(character, 'Name'));
+
+                    var attributes = [
+                        'Strength',
+                        'Endurance',
+                        'Agility',
+
+                        'Charisma',
+                        'Intelligence',
+
+                        'Willpower'
+                    ];
+
+                    attributes.forEach(function(attributeName) {
+                        var propDesc = Object.getOwnPropertyDescriptor(character, attributeName);
+                        delete propDesc.writable;
+                        delete propDesc.set;
+                        Class.define(self, attributeName, propDesc);
+                    });
+
+                    ['Size', 'Luck', 'SpiritSpent', 'Spirit', 'Perception', 'HitPoints',
+                    'MaxCarryWeight', 'AttackSpeed', 'MovementSpeed', 'CurrentDamage'].forEach(function(propName) {
+                        Class.define(self, propName, Object.getOwnPropertyDescriptor(character, propName));
+                    });
+
+                    var _hitLocations = {
+                        "Head" : {
+                            "DisplayName" : "Head",
+                            "Health" : null,
+                            "Percentage" : 5,
+                            "InventorySlots" : {
+                                "Hat" : null,
+                                "EyeWear" : null,
+                                "EarWear" : null,
+                                "MouthWear" : null,
+                                "NeckWear" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "RightArm" : {
+                            "DisplayName" : "Right Arm",
+                            "Health" : null,
+                            "Percentage" : 10,
+                            "InventorySlots" : {
+                                "ShoulderWear" : null,
+                                "UpperMidWear" : null,
+                                "ElbowWear" : null,
+                                "LowerMidWear" : null,
+                                "WristWear" : null,
+                                "Gloves" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "Chest" : {
+                            "DisplayName" : "Chest",
+                            "Health" : null,
+                            "Percentage" : 25,
+                            "InventorySlots" : {
+                                "CollarWear" : null,
+                                "LeftBreastWear" : null,
+                                "RightBreastWear" : null,
+                                "BackWear" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "LeftArm" : {
+                            "DisplayName" : "Left Arm",
+                            "Health" : null,
+                            "Percentage" : 10,
+                            "InventorySlots" : {
+                                "ShoulderWear" : null,
+                                "UpperMidWear" : null,
+                                "ElbowWear" : null,
+                                "LowerMidWear" : null,
+                                "WristWear" : null,
+                                "Gloves" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "Abdomen" : {
+                            "DisplayName" : "Abdomen",
+                            "Health" : null,
+                            "Percentage" : 20,
+                            "InventorySlots" : {
+                                "PlexusWear" : null,
+                                "BellyWear" : null,
+                                "Belt" : null,
+                                "GroinWear" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "RightLeg" : {
+                            "DisplayName" : "Right Leg",
+                            "Health" : null,
+                            "Percentage" : 15,
+                            "InventorySlots" : {
+                                "HipWear" : null,
+                                "UpperMidWear" : null,
+                                "KneeWear" : null,
+                                "LowerMidWear" : null,
+                                "AnkleWear" : null,
+                                "Feet" : null
+                            },
+                            "Wounds" : []
+                        },
+                        "LeftLeg" : {
+                            "DisplayName" : "Left Leg",
+                            "Health" : null,
+                            "Percentage" : 15,
+                            "InventorySlots" : {
+                                "HipWear" : null,
+                                "UpperMidWear" : null,
+                                "KneeWear" : null,
+                                "LowerMidWear" : null,
+                                "AnkleWear" : null,
+                                "Feet" : null
+                            },
+                            "Wounds" : []
+                        }
+                    };
+
+                    var totalLocationPercentage = 0;
+                    for(var loc in _hitLocations) {
+                        totalLocationPercentage += _hitLocations[loc].Percentage;
+                    }
+                    if (totalLocationPercentage !== 100) {
+                        console.error("Total Hit Location coverage is "+(totalLocationPercentage < 100 ? "less" : "greater")+" than 100%:", totalLocationPercentage);
+                    }
+
+                    Class.define(self, 'HitLocations', {
+                        get: function() { return _hitLocations; }
+                    });
+
+                    Class.define(self.HitLocations.Head, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 5); }
+                    });
+
+                    Class.define(self.HitLocations.RightArm, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 4); }
+                    });
+
+                    Class.define(self.HitLocations.Chest, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 2); }
+                    });
+
+                    Class.define(self.HitLocations.LeftArm, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 4); }
+                    });
+
+                    Class.define(self.HitLocations.Abdomen, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 3); }
+                    });
+
+                    Class.define(self.HitLocations.RightLeg, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 3); }
+                    });
+
+                    Class.define(self.HitLocations.LeftLeg, "HitPoints", {
+                        get: function() { return Math.round(self.HitPoints / 3); }
+                    });
+
+
+                    Class.define(self, 'Effects', Class({}).Enumerable());
+
+                    Class.define(self, 'Skills', Class({}).Enumerable());
+
+                    var skills = data.Skills || {};
+                    function skillGenerator(skillName, baseFn, luckFn) {
+                        var skillData = skills[skillName] || {};
+                        var _learned = skillData.learned || 0;
+                        var _uses = skillData.uses || 0;
+                        luckFn = luckFn || function() { return 0; };
+
+                        var skillObj = {};
+
+                        Class.define(skillObj, 'base', {
+                            get: baseFn,
+                            enumerable: true
+                        });
+
+                        Class.define(skillObj, 'learned', {
+                            get: function() {
+                                return _learned;
+                            },
+                            enumerable: true
+                        });
+
+                        Class.define(skillObj, 'uses', {
+                            get: function() {
+                                return _uses;
+                            },
+                            enumerable: true
+                        });
+
+                        Class.define(skillObj, 'value', {
+                            get: function() {
+                                return Math.round(baseFn() + luckFn()) + _learned;
+                            }
+                        });
+
+                        Class.define(skillObj, 'valueOf', {
+                            value: skillObj.value
+                        });
+
+                        Class.define(skillObj, 'toValue', {
+                            value: skillObj.valueOf
+                        });
+
+                        var retObj = {
+                            get: function() {
+                                return skillObj;
+                            },
+                            set: function(value) {
+                                var oldValue = _learned;
+                                var newValue = value - baseFn();
+                                if (oldValue !== newValue && newValue > -1) {
+                                    _learned = newValue;
+                                    self.emit('changed', {
+                                        object: self,
+                                        oldValue: oldValue,
+                                        newValue: _learned,
+                                        name: 'Skills.'+skillName+'.learned'
+                                    });
+                                }
+                            },
+                            enumerable: true
+                        };
+                        return retObj;
+                    }
+
+                    var skillBase = {
+                        'Firearms': skillGenerator('Firearms', function() {
+                            return self.Agility + 10;
+                        }, function() {
+                            return self.Luck / 3;
+                        }),
+                        'Archery': skillGenerator('Archery', function() {
+                            return Math.round(2 + self.Agility * 2 + self.Strength / 2);
+                        }, function() {
+                            return self.Luck / 3;
+                        }),
+                        'Explosives' : skillGenerator('Explosives', function() {
+                            return Math.round(2 + self.Perception * 2);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Melee' : skillGenerator('Melee', function() {
+                            return 30 + (2 * self.Agility) + (2 * self.Strength);
+                        }),
+                        'Throwing' : skillGenerator('Throwing', function() {
+                            return Math.round(3 * self.Agility + self.Strength / 2);
+                        }),
+                        'Lockpick' : skillGenerator('Lockpick', function() {
+                            return Math.round(20 + self.Perception / 2 + self.Agility / 2);
+                        }, function() {
+                            return self.Luck;
+                        }),
+                        'Mechanics' : skillGenerator('Mechanics', function() {
+                            return 20 + self.Intelligence;
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Medicine' : skillGenerator('Medicine', function() {
+                            return Math.round(self.Perception + (self.Intelligence * 2));
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Science' : skillGenerator('Science', function() {
+                            return self.Perception + (self.Intelligence * 3);
+                        }),
+                        'Craftsmanship' : skillGenerator('Craftsmanship', function() {
+                            return Math.round(self.Intelligence / 2 + self.Perception / 2 + self.Agility / 2);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Stealth' : skillGenerator('Stealth', function() {
+                            return Math.round(2 + self.Agility * 2);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Survival' : skillGenerator('Survival', function() {
+                            return Math.round(2 + self.Endurance + self.Intelligence);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Gambling' : skillGenerator('Gambling', function() {
+                            return Math.round(2 + self.Perception * 2);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Speech' : skillGenerator('Speech', function() {
+                            return Math.round(2 + self.Charisma * 2);
+                        }, function() {
+                            return self.Luck / 2;
+                        }),
+                        'Athletics' : skillGenerator('Athletics', function() {
+                            return Math.round(2 + self.Agility + self.Strength + self.Endurance / 2);
+                        }),
+                        'Piloting' : skillGenerator('Piloting', function() {
+                            return 2 * (self.Agility + self.Perception);
+                        }),
+                        'History' : skillGenerator('History', function() {
+                            return Math.round(2 + self.Intelligence * 2 + self.Perception / 2);
+                        }),
+                    };
+
+                    var skillName;
+
+                    for(skillName in skillBase) {
+                        Class.define(self.Skills, skillName, skillBase[skillName]);
+                    }
+                }
+            });
+
+            Onto.addClass('Character', Character);
+
+        })();
+    </script>
+
+    <script type="text/javascript" src="/lib/ui/base.js"></script>
+    <script type="text/javascript" src="/lib/ui/textbox.js"></script>
+
+    <script>
+        //=========================================================== Init
+        var Game = null;
+        var character = Onto.Utility.localStorage.get('character', Onto.CharacterTemplate) || new Onto.CharacterTemplate();
+        // delete character.isAbstract;
+        character.save = function() {
+            Onto.Utility.localStorage.set('character', this);
+            character.emit('saved', character);
+            console.log("Character saved");
+        };
+        character.show = function() {
+            var $pre = $("#body").find("#characterRaw");
+            if (!$pre.length) {
+                $pre = $("<pre id='characterRaw' />");
+                $("#body").append($pre);
+            }
+            $pre.text(JSON.stringify(character, null, 4));
+
+            var $hitDisplay = $(".hitlocations-display");
+            for(var loc in character.HitLocations) {
+                var $input = $hitDisplay.find('.' + loc.toLowerCase().replace(' ', ''));
+                $input.val(character.HitLocations[loc].HitPoints);
+            }
+
+            for(var attrName in character.Attributes) {
+                var $input = $('.stats').find('.attribute[data-attrname=' + attrName + ']');
+                $input.val(character[attrName]);
+            }
+
+            $('.stats .hitpoints').val(character.HitPoints);
+            $('.stats .maxcarryweight').val(character.MaxCarryWeight);
+
+            $('.stats .size').val(character.Size);
+            $('.stats .perception').val(character.Perception);
+            $('.stats .spirit').val(character.Spirit);
+            $('.stats .movespeed').val(character.MovementSpeed);
+            $('.stats .attackspeed').val(character.AttackSpeed);
+
+            $('.stats .attributetotal').val(character.AttributeTotal);
+            $('.stats .attributetotalmax').val(character.AttributeConstraints.MaxDistribution);
+
+            console.log("Character updated, UI refreshed");
+        };
+        $(function() {
+            var $body = $("#body");
+
+            [
+                character, character.Skills, character.Effects,
+                character.AttributeConstraints, character.SkillConstraints
+            ].forEach(function(item) {
+                Object.observe(item, function(changes) {
+                    character.show();
+                });
+            });
+            character.on('changed', function(args) {
+                character.show();
+            });
+
+            console.log(character);
+            character.show();
+            character.save();
+
+            var $showBtn = $("<button>Show</button>");
+            $showBtn.on('click', function(ev) {
+                character.show();
+            });
+            $body.prepend($showBtn);
+
+            var $saveBtn = $("<button>Save</button>");
+            $saveBtn.on('click', function(ev) {
+                character.save();
+            });
+            $body.prepend($saveBtn);
+
+            var nameBox = new Onto.UI.TextBox({
+                el: '.stats .name',
+                attributes: {
+                    value: character.Name
+                },
+                events: {
+                    change: function(){
+                        character.Name = $(this).val();
+                    }
+                }
+            });
+
+            $('.decrementAttribute').on('click', function(ev) {
+                ev.preventDefault();
+                var $input = $(this).parent().find('.attribute');
+                character[$input.attr('data-attrname')] -= 1;
+            });
+
+            $('.incrementAttribute').on('click', function(ev) {
+                ev.preventDefault();
+                var $input = $(this).parent().find('.attribute');
+                character[$input.attr('data-attrname')] += 1;
+            });
+        });
+    </script>
+
+    <div id="body">
+        <style>
+            .clear {
+                clear: both;
+            }
+            .labelShort {
+                clear: left;
+                float: left;
+                width: 120px;
+            }
+            .character-sheet {
+
+            }
+            .floatLeft {
+                float:left;
+            }
+            .widthHalf {
+                width: 50%;
+            }
+
+            .character-sheet .stats {
+            }
+            .character-sheet .hitlocations-display {
+                position: relative;
+                float: right;
+                padding: 10px;
+                margin-right: 30px;
+            }
+            input.small {
+                width: 50px;
+            }
+            .alignRight {
+                text-align: right;
+            }
+        </style>
+        <div class="character-sheet">
+            <div class="human-outline hitlocations-display" style="">
+                <img src="/img/human-outline-front.svg" class="relative" />
+                <div style="position: absolute; top: 25px; left: 0">
+                    <span>Head:</span>
+                    <input class="small alignRight head" type=text disabled value="" />
+                </div>
+                <div style="position: absolute; top: 95px; left: 0">
+                    <span>Chest:</span>
+                    <input class="small alignRight chest" type=text disabled value="" />
+                </div>
+                <div style="position: absolute; top: 175px; left: -40px;">
+                    <span>Abdomen:</span>
+                    <input class="small alignRight abdomen" type=text disabled value="" />
+                </div>
+                <div style="position: absolute; top: 245px; left: -80px;">
+                    <span>Right Arm:</span>
+                    <input class="small alignRight rightarm" type=text disabled value="" />
+                </div>
+                <div style="position: absolute; top: 345px; left: -30px;">
+                    <span>Right Leg:</span>
+                    <input class="small alignRight rightleg" type=text disabled value="" />
+                </div>
+                <div style="position: absolute; top: 245px; left: 160px;">
+                    <input class="small alignRight leftarm" type=text disabled value="" />
+                    <span>Left Arm</span>
+                </div>
+                <div style="position: absolute; top: 345px; left: 150px;">
+                    <input class="small alignRight leftleg" type=text disabled value="" />
+                    <span>Left Leg</span>
+                </div>
+            </div>
+            <div class="stats">
+                <h3>Basic Information</h3>
+                <div class="widthHalf floatLeft">
+                    <div>
+                        <span class="labelShort">Name:</span>
+                        <input type=text class="name" value="" />
+                    </div>
+                    <div>
+                        <span class="labelShort">Age:</span>
+                        <input class="small alignRight age" type=text value="" />
+                        <button ng-click="decrementAge()">&#x25BC;</button>
+                        <button ng-click="incrementAge()">&#x25B2;</button>
+                    </div>
+                    <div>
+                        <span class="labelShort">Gender:</span>
+                        <input class="small alignRight gender" type=text disabled />
+                        <button ng-click="setMale()">&#x2640;</button>
+                        <button ng-click="setFemale()">&#x2642;</button>
+                    </div>
+                    <div>
+                        <span class="labelShort">Hit Points:</span>
+                        <input class="small alignRight hitpoints" type=text disabled value="" />
+                    </div>
+                    <div>
+                        <span class="labelShort">Max Carry Weight:</span>
+                        <input class="small alignRight maxcarryweight" type=text disabled value="" /> lbs
+                    </div>
+                </div>
+                <div class="widthHalf floatLeft">
+                    <div>
+                        <span class="labelShort">Size:</span>
+                        <input class="small alignRight size" type=text disabled value="" />
+                    </div>
+                    <div>
+                        <span class="labelShort">Perception:</span>
+                        <input class="small alignRight perception" type=text disabled value="" />
+                    </div>
+                    <div>
+                        <span class="labelShort">Spirit:</span>
+                        <input class="small alignRight spirit" type=text disabled value="" />
+                    </div>
+                    <div>
+                        <span class="labelShort">Move Speed:</span>
+                        <input class="small alignRight movespeed" type=text disabled value="" />
+                    </div>
+                    <div>
+                        <span class="labelShort">Attack Speed:</span>
+                        <input class="small alignRight attackspeed" type=text disabled value="" /> x 100 ms
+                    </div>
+                </div>
+
+                <div class="widthHalf floatLeft">
+                    <h3>Attributes</h3>
+                    <div>
+                        <span class="labelShort">Strength:</span>
+                        <input class="small alignRight attribute" data-attrname="Strength" type=text disabled />
+                        <button class="decrementAttribute" data-attrname="Strength">&#x25BC;</button>
+                        <button class="incrementAttribute" data-attrname="Strength">&#x25B2;</button>
+                    </div>
+                    <div>
+                        <span class="labelShort">Endurance:</span>
+                        <input class="small alignRight attribute" data-attrname="Endurance" type=text disabled />
+                        <button class="decrementAttribute" data-attrname="Endurance">&#x25BC;</button>
+                        <button class="incrementAttribute" data-attrname="Endurance">&#x25B2;</button>
+                    </div>
+                    <div>
+                        <span class="labelShort">Agility:</span>
+                        <input class="small alignRight attribute" data-attrname="Agility" type=text disabled />
+                        <button class="decrementAttribute" data-attrname="Agility">&#x25BC;</button>
+                        <button class="incrementAttribute" data-attrname="Agility">&#x25B2;</button>
+                    </div>
+                    <div>
+                        <span class="labelShort">Charisma:</span>
+                        <input class="small alignRight attribute" data-attrname="Charisma" type=text disabled />
+                        <button class="decrementAttribute" data-attrname="Charisma">&#x25BC;</button>
+                        <button class="incrementAttribute" data-attrname="Charisma">&#x25B2;</button>
+                    </div>
+                    <div>
+                        <span class="labelShort">Intelligence:</span>
+                        <input class="small alignRight attribute" data-attrname="Intelligence" type=text disabled />
+                        <button class="decrementAttribute" data-attrname="Intelligence">&#x25BC;</button>
+                        <button class="incrementAttribute" data-attrname="Intelligence">&#x25B2;</button>
+                    </div>
+                    <div>
+                        <span class="labelShort">Willpower:</span>
+                        <input class="small alignRight attribute" data-attrname="Willpower" type=text disabled />
+                        <button class="decrementAttribute" data-attrname="Willpower">&#x25BC;</button>
+                        <button class="incrementAttribute" data-attrname="Willpower">&#x25B2;</button>
+                    </div>
+                    <div>
+                        <span class="labelShort">Total / Max:</span>
+                        <input class="small alignRight attributetotal" type=text disabled /> /
+                        <input class="small alignLeft attributetotalmax" type=text disabled />
+                    </div>
+                </div>
+
+                <div class="widthHalf floatLeft">
+                    <h3>Skills</h3>
+                    <div>
+                        <span class="labelShort">Skill Points:</span>
+                        <input class="small alignRight" type=text ng-model="StartingSkillPoints" disabled />
+                    </div>
+
+                    <div ng-repeat="(key, skill) in character.Specializations track by $index">
+                        <div>
+                            <span class="labelMedium">{{key}}:</span>
+                            Base <input class="small alignRight" type=text value="{{ character.Skills[key]() }}" disabled />
+                            + Specialization <input class="small alignRight" type=text ng-model="skill.General" disabled />
+                            <button ng-click="decrementSkill()" skillname="{{key}}">&#x25BC;</button>
+                            <button ng-click="incrementSkill()" skillname="{{key}}">&#x25B2;</button>
+                            = <input class="small alignRight" type=text value="{{ character.Skills[key]() + skill.General }}" disabled />
+                        </div>
+
+                        <div ng-repeat="(key2, subSkill) in skill track by $index">
+                            <div class="indent" ng-if="key2 != 'General'">
+                                <span class="labelShort">{{key2}}:</span>
+                                Base <input class="small alignRight" type=text value="{{ character.Skills[key]() + skill.General }}" disabled />
+                                + Specialization <input class="small alignRight" type=text ng-model="subSkill" disabled />
+                                <button ng-click="decrementSkill()" skillname="{{key}}.{{key2}}">&#x25BC;</button>
+                                <button ng-click="incrementSkill()" skillname="{{key}}.{{key2}}">&#x25B2;</button>
+                                = <input class="small alignRight" type=text value="{{ character.Skills[key]() + skill.General + subSkill }}" disabled />
+                            </div>
+                        </div>
+
+                        <div class="space"> </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="clear"></div>
+
+    </div>
+</body>
+</html>

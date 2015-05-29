@@ -1,6 +1,6 @@
 module.exports = function(grunt) {
 
-    var libPaths = [
+    var corePaths = [
         'lib/onto.js',
         'lib/dice.js',
         'lib/base.js',
@@ -25,9 +25,15 @@ module.exports = function(grunt) {
         'lib/game.js'
     ];
 
-    var concatPaths = ['lib/intro.js'].concat(libPaths).concat(['lib/outro.js']);
+    var uiPaths = [
+        'lib/ui/base.js',
+        'lib/ui/textbox.js'
+    ];
 
-    var testLibPaths = [
+    var concatPaths = ['lib/intro.js'].concat(corePaths).concat(['lib/outro.js']);
+    var concatUIPaths = ['lib/intro.js'].concat(corePaths).concat(uiPaths).concat(['lib/outro.js']);
+
+    var testcorePaths = [
         'dist/onto.js'
     ];
 
@@ -40,14 +46,18 @@ module.exports = function(grunt) {
         pkg: grunt.file.readJSON('package.json'),
         paths: {
             vendor: [
-                'dist/Class.min.js', 'dist/Namespace.min.js',
-                'dist/EventEmitter.min.js', 'dist/ReferenceObject.min.js', ,
+                'dist/Class.min.js',
+                'dist/Namespace.min.js',
+                'dist/EventEmitter.min.js',
+                'dist/ReferenceObject.min.js',
                 'dist/Collection.min.js',
                 'dist/underscore.js'
             ],
-            lib: libPaths,
-            concat: concatPaths,
-            testLib: testLibPaths,
+            core: corePaths,
+            ui: uiPaths,
+            concatCore: concatPaths,
+            concatUI: concatUIPaths,
+            testLib: testcorePaths,
             test: testPaths
         },
         taskGroups: {
@@ -57,9 +67,13 @@ module.exports = function(grunt) {
             options: {
                 separator: '',
             },
-            onto: {
-                src: '<%= paths.concat %>',
+            core: {
+                src: '<%= paths.concatCore %>',
                 dest: 'dist/onto.js',
+            },
+            ui: {
+                src: '<%= paths.concatUI %>',
+                dest: 'dist/onto.ui.js',
             }
         },
         uglify: {
@@ -67,9 +81,13 @@ module.exports = function(grunt) {
                 banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n',
                 sourceMap: true
             },
-            onto: {
+            core: {
                 src: 'dist/onto.js',
                 dest: 'dist/onto.min.js'
+            },
+            ui: {
+                src: 'dist/onto.ui.js',
+                dest: 'dist/onto.ui.min.js'
             }
         },
         mochaTest: { //Node.js tests
@@ -202,6 +220,7 @@ module.exports = function(grunt) {
         console.log("Test server can be found at:", "localhost:" + 8010 + "/test/");
         grunt.task.run(['connect:test:keepalive']);
     });
+
     grunt.registerTask('build', '', function() {
         var done = this.async();
         grunt.task.run([ /*'requireBower', */ 'bower', 'concat', 'uglify']);
@@ -239,6 +258,14 @@ module.exports = function(grunt) {
             done();
         });
     });
-    grunt.registerTask('default', ['test']);
+
+    grunt.registerTask('begin', '', function() {
+        grunt.task.run(['build']);
+        var server = require('./server');
+        setTimeout(function() {
+            grunt.task.run(['watch']);
+        });
+    });
+    grunt.registerTask('default', ['begin']);
 
 };
